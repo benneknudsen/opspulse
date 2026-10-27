@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "reference/vision.html",
+  "entry": "reference/vision.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-10-21T22:43:36.111Z",
+  "updatedAt": "2026-10-21T22:43:36.111Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}
