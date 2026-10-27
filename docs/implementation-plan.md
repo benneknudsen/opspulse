@@ -4,6 +4,28 @@
 > QA gate `npm test -- --run --reporter=dot`, HermaGuard on risky diffs, independent QA model).
 > This plan is the briefing source, not the issue bodies.
 
+## Issue map
+
+The phase numbers below are stable labels; the GitHub issues they become are:
+
+| Phase / "Issue N" | GitHub | Title |
+|---|---|---|
+| Issue 1 (Phase 0) | [#14](https://github.com/benneknudsen/opspulse/issues/14) | Bootstrap, design import, tokens → Tailwind v4 |
+| Issue 2 (Phase 1) | [#15](https://github.com/benneknudsen/opspulse/issues/15) | App shell: topbar, nav, connection pill, switches |
+| Issue 3 (Phase 2) | [#16](https://github.com/benneknudsen/opspulse/issues/16) | Config, connector interface, demo data |
+| Issue 4 (Phase 3) | [#17](https://github.com/benneknudsen/opspulse/issues/17) | Realtime: WebSocket sidecar + granular store |
+| Issue 5 (Phase 4) | [#18](https://github.com/benneknudsen/opspulse/issues/18) | Dashboard widgets |
+| Issue 6 (Phase 5) | [#19](https://github.com/benneknudsen/opspulse/issues/19) | Virtualised queue table (showcase) |
+| Issue 7 (Phase 6) | [#20](https://github.com/benneknudsen/opspulse/issues/20) | Optimistic actions, toast, rollback |
+| Issue 8 (Phase 7) | [#21](https://github.com/benneknudsen/opspulse/issues/21) | Connection states: stale-fade, lost |
+| Issue 9 (Phase 8) | [#22](https://github.com/benneknudsen/opspulse/issues/22) | History view and chart geometry |
+| Issue 10 (Phase 8) | [#23](https://github.com/benneknudsen/opspulse/issues/23) | Onboarding wizard (3 steps) |
+| Issue 11 (Phase 8) | [#24](https://github.com/benneknudsen/opspulse/issues/24) | Settings: connectors, interface, widgets grid |
+| Issue 12 (Phase 9) | [#25](https://github.com/benneknudsen/opspulse/issues/25) | Empty states and mobile shell |
+| Issue 13 (Phase 9) | [#26](https://github.com/benneknudsen/opspulse/issues/26) | Accessibility and reduced motion |
+| Issue 14 (Phase 9) | [#27](https://github.com/benneknudsen/opspulse/issues/27) | Perf, parity gate, open-source docs |
+
+
 **Goal:** Build OpsPulse — an open-source, configuration-first, real-time operations dashboard for
 self-hosted media servers (*arr stack, Plex, Tautulli, Scrutiny) as a Next.js app that is a
 pixel-faithful implementation of the design handoff "OpsPulse design handoff complete".
