@@ -1,0 +1,2538 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-density="comfortable">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>OpsPulse — design reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   TOKENS — inlined verbatim from tokens.css (single source of truth).
+   ══════════════════════════════════════════════════════════════════════════ */
+/* ============================================================================
+   OpsPulse — design tokens (single source of truth)
+   OpsPulse is a real-time operations dashboard for self-hosted media servers.
+   Dark-first. One accent. Status colours are functional, never decorative.
+   ----------------------------------------------------------------------------
+   Usage:
+     - Plain CSS projects: @import "./tokens.css";
+     - Tailwind projects: see tailwind.config.ts (every colour below is exposed
+       as a token name, no raw hex in components).
+   Theme is driven by [data-theme="dark" | "light"] on <html>.
+   Density is driven by [data-density="comfortable" | "compact"] on <html>.
+   ========================================================================== */
+
+:root {
+  /* ── Type ─────────────────────────────────────────────────────────────── */
+  --font-ui: "IBM Plex Sans", "Segoe UI", -apple-system, BlinkMacSystemFont,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", SFMono-Regular,
+    Menlo, Consolas, monospace;
+
+  --fs-11: 11px;   /* micro label, table super-header */
+  --fs-12: 12px;   /* badge, timestamp, axis label */
+  --fs-13: 13px;   /* meta, table cell (secondary) */
+  --fs-14: 14px;   /* body, table cell (default) */
+  --fs-15: 15px;   /* sub-heading, panel title */
+  --fs-16: 16px;   /* card title, lead */
+  --fs-18: 18px;   /* widget heading */
+  --fs-22: 22px;   /* page heading */
+  --fs-28: 28px;   /* display / KPI value */
+  --fs-36: 36px;   /* hero metric in empty states */
+
+  --lh-tight: 1.2;
+  --lh-snug: 1.35;
+  --lh-body: 1.5;
+
+  --track-display: -0.02em;
+  --track-tight: -0.01em;
+  --track-label: 0.06em;   /* uppercase micro labels only */
+
+  /* ── Spacing (4px base) ──────────────────────────────────────────────── */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+
+  /* ── Radius ───────────────────────────────────────────────────────────── */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-pill: 999px;
+
+  /* ── Motion ───────────────────────────────────────────────────────────── */
+  --dur-1: 80ms;    /* press feedback */
+  --dur-2: 140ms;   /* hover, focus ring */
+  --dur-3: 220ms;   /* enter/exit, optimistic settle */
+  --dur-4: 400ms;   /* count-up, chart draw */
+  --dur-5: 1200ms;  /* live pulse (loop) */
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);  /* default UI transition curve */
+  --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-linear: linear;
+
+  /* ── Layout ───────────────────────────────────────────────────────────── */
+  --topbar-h: 52px;
+  --page-max: 1600px;
+  --grid-gap: var(--sp-4);
+}
+
+/* ============================================================================
+   DARK — primary theme
+   ========================================================================== */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0b0c0e;
+  --surface: #121417;
+  --surface-2: #171a1e;
+  --surface-3: #1e2226;
+  --surface-inset: #0e1012;
+
+  --fg: #e9ebee;
+  --fg-2: #a8b0b8;
+  --muted: #79818a;
+  --faint: #7d858d;
+
+  --border: rgba(255, 255, 255, 0.09);
+  --border-soft: rgba(255, 255, 255, 0.055);   /* row dividers — quieter than --border */
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --border-accent: rgba(76, 141, 255, 0.45);
+
+  --accent: #4c8dff;
+  --accent-hover: #6ba1ff;
+  --accent-active: #3a78e0;
+  --accent-on: #061021;
+  --accent-soft: rgba(76, 141, 255, 0.14);
+  --accent-line: rgba(76, 141, 255, 0.32);
+
+  /* functional status palette */
+  --ok: #3fb950;
+  --ok-soft: rgba(63, 185, 80, 0.14);
+  --warn: #d29922;
+  --warn-soft: rgba(210, 153, 34, 0.15);
+  --danger: #f85149;
+  --danger-soft: rgba(248, 81, 73, 0.14);
+  --stale: #6b7280;
+  --stale-soft: rgba(107, 114, 128, 0.16);
+
+  /* data-viz — sequential ramp (7 steps, dark→light for dark surfaces) */
+  --viz-seq-1: #16324e;
+  --viz-seq-2: #1b4470;
+  --viz-seq-3: #1f5692;
+  --viz-seq-4: #266ab4;
+  --viz-seq-5: #3d86d4;
+  --viz-seq-6: #5ba0ea;
+  --viz-seq-7: #8bbdf3;
+
+  /* data-viz — categorical (6 distinguishable hues) */
+  --viz-cat-1: #4c8dff;
+  --viz-cat-2: #3fb950;
+  --viz-cat-3: #d29922;
+  --viz-cat-4: #f85149;
+  --viz-cat-5: #b083f0;
+  --viz-cat-6: #39c5cf;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-3: 0 16px 40px rgba(0, 0, 0, 0.55);
+  --scrim: rgba(3, 4, 6, 0.72);
+}
+
+/* ============================================================================
+   LIGHT — secondary theme (same token names, remapped values)
+   ========================================================================== */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --surface-2: #f1f3f5;
+  --surface-3: #e7eaee;
+  --surface-inset: #eef0f3;
+
+  --fg: #14171a;
+  --fg-2: #454c54;
+  --muted: #616870;
+  --faint: #656d75;
+
+  --border: rgba(0, 0, 0, 0.11);
+  --border-soft: rgba(0, 0, 0, 0.07);           /* row dividers — quieter than --border */
+  --border-strong: rgba(0, 0, 0, 0.2);
+  --border-accent: rgba(31, 111, 235, 0.4);
+
+  --accent: #1f6feb;
+  --accent-hover: #1a5fd0;
+  --accent-active: #1854b8;
+  --accent-on: #ffffff;
+  --accent-soft: rgba(31, 111, 235, 0.1);
+  --accent-line: rgba(31, 111, 235, 0.28);
+
+  --ok: #1a7f37;
+  --ok-soft: rgba(26, 127, 55, 0.12);
+  --warn: #9a6700;
+  --warn-soft: rgba(154, 103, 0, 0.13);
+  --danger: #cf222e;
+  --danger-soft: rgba(207, 34, 46, 0.11);
+  --stale: #8b949e;
+  --stale-soft: rgba(139, 148, 158, 0.16);
+
+  --viz-seq-1: #dbe9fa;
+  --viz-seq-2: #b9d5f4;
+  --viz-seq-3: #8fb9ea;
+  --viz-seq-4: #5f9adb;
+  --viz-seq-5: #2f79cd;
+  --viz-seq-6: #1a5aa6;
+  --viz-seq-7: #123d74;
+
+  --viz-cat-1: #1f6feb;
+  --viz-cat-2: #1a7f37;
+  --viz-cat-3: #9a6700;
+  --viz-cat-4: #cf222e;
+  --viz-cat-5: #8250df;
+  --viz-cat-6: #0e7c86;
+
+  --shadow-1: 0 1px 2px rgba(16, 22, 26, 0.08);
+  --shadow-2: 0 4px 14px rgba(16, 22, 26, 0.1);
+  --shadow-3: 0 16px 40px rgba(16, 22, 26, 0.16);
+  --scrim: rgba(20, 24, 28, 0.42);
+}
+
+/* ============================================================================
+   DENSITY — two densities, one scale
+   ========================================================================== */
+:root,
+[data-density="comfortable"] {
+  --row-h: 44px;
+  --cell-py: 11px;
+  --cell-px: 14px;
+  --feed-item-py: 10px;
+  --feed-gap: 2px;
+  --widget-pad: var(--sp-4);
+  --card-pad: var(--sp-5);
+  --kpi-pad: var(--sp-5);
+  --fs-cell: var(--fs-14);
+  --fs-feed: var(--fs-14);
+}
+
+[data-density="compact"] {
+  --row-h: 32px;
+  --cell-py: 5px;
+  --cell-px: 10px;
+  --feed-item-py: 5px;
+  --feed-gap: 0px;
+  --widget-pad: var(--sp-3);
+  --card-pad: var(--sp-3);
+  --kpi-pad: var(--sp-3);
+  --fs-cell: var(--fs-13);
+  --fs-feed: var(--fs-13);
+}
+
+/* ============================================================================
+   Z-INDEX
+   ========================================================================== */
+:root {
+  --z-base: 0;
+  --z-sticky: 100;
+  --z-dropdown: 200;
+  --z-overlay: 300;
+  --z-toast: 400;
+}
+
+/* ============================================================================
+   ANIMATION KEYFRAMES
+   ========================================================================== */
+@keyframes op-feed-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes op-row-settle {
+  0%   { background-color: var(--accent-soft); }
+  100% { background-color: transparent; }
+}
+@keyframes op-live-pulse {
+  0%   { box-shadow: 0 0 0 0 var(--accent-soft); }
+  70%  { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+@keyframes op-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes op-toast-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes op-stale-fade {
+  from { opacity: 1; filter: saturate(1); }
+  to   { opacity: 0.45; filter: saturate(0.15); }
+}
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes op-row-settle {
+  0%   { background-color: var(--accent-soft); }
+  100% { background-color: transparent; }
+}
+@keyframes op-live-pulse {
+  0%   { box-shadow: 0 0 0 0 var(--accent-soft); }
+  70%  { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+@keyframes op-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes op-toast-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes op-stale-fade {
+  from { opacity: 1; filter: saturate(1); }
+  to   { opacity: 0.45; filter: saturate(0.15); }
+}
+
+/* ══ reset ══ */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-ui);
+  font-size: var(--fs-14);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+img, svg { display: block; max-width: 100%; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+a { color: var(--accent); text-decoration: none; }
+h1, h2, h3, h4, p, ul, ol, dl, dd, figure { margin: 0; }
+ul, ol { list-style: none; padding: 0; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r-xs); }
+
+.num, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.label {
+  font-size: var(--fs-11); letter-spacing: var(--track-label); text-transform: uppercase;
+  color: var(--muted); font-weight: 500;
+}
+
+/* ══ app chrome ══ */
+.app { min-height: 100vh; }
+.topbar {
+  height: var(--topbar-h);
+  display: flex; align-items: center; gap: var(--sp-5);
+  padding: 0 var(--sp-5);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: relative; z-index: var(--z-sticky);
+}
+.brand { display: flex; align-items: center; gap: var(--sp-2); font-weight: 600; letter-spacing: var(--track-tight); }
+.brand svg { width: 18px; height: 18px; color: var(--accent); }
+.tabs { display: flex; gap: var(--sp-1); margin-left: var(--sp-4); }
+.tab {
+  padding: 5px var(--sp-3); border-radius: var(--r-sm);
+  color: var(--muted); font-size: var(--fs-14); font-weight: 500;
+}
+.tab:hover { color: var(--fg); background: var(--surface-2); }
+.tab[aria-current="page"] { color: var(--fg); background: var(--surface-2); }
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: var(--sp-3); }
+.live-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--fs-12); font-weight: 500; color: var(--ok);
+  padding: 3px 9px 3px 7px; border: 1px solid var(--border); border-radius: var(--r-pill);
+  background: var(--surface-2);
+}
+.dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.dot.live { animation: op-live-pulse var(--dur-5) var(--ease-inout) infinite; }
+.demo-chip {
+  font-size: var(--fs-11); letter-spacing: var(--track-label); text-transform: uppercase;
+  color: var(--muted); border: 1px dashed var(--border-strong); border-radius: var(--r-xs);
+  padding: 2px 7px;
+}
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; }
+.seg button {
+  padding: 3px 9px; font-size: var(--fs-12); color: var(--muted);
+  border-right: 1px solid var(--border);
+}
+.seg button:last-child { border-right: 0; }
+.seg button:hover { color: var(--fg); background: var(--surface-2); }
+.seg button[aria-pressed="true"] { color: var(--fg); background: var(--surface-3); }
+.icon-btn {
+  width: 30px; height: 26px; display: grid; place-items: center;
+  border: 1px solid var(--border); border-radius: var(--r-sm); color: var(--muted);
+}
+.icon-btn:hover { color: var(--fg); background: var(--surface-2); }
+.icon-btn svg { width: 15px; height: 15px; }
+
+/* reference-only view switcher (design doc chrome, not product UI) */
+.refbar {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: 7px var(--sp-5);
+  background: var(--surface-inset);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-mono); font-size: var(--fs-11);
+}
+.refbar > .label { color: var(--faint); }
+.refbar nav { display: flex; flex-wrap: wrap; gap: var(--sp-1); }
+.refbar nav button {
+  padding: 3px 9px; border: 1px solid var(--border); border-radius: var(--r-xs);
+  color: var(--muted); letter-spacing: 0.02em;
+}
+.refbar nav button:hover { color: var(--fg); border-color: var(--border-strong); }
+.refbar nav button[aria-pressed="true"] { color: var(--fg); background: var(--surface-3); border-color: var(--border-strong); }
+.refbar .spacer { margin-left: auto; color: var(--faint); }
+
+/* ══ page frame ══ */
+.page { padding: var(--sp-5); max-width: var(--page-max); margin: 0 auto; }
+.view[hidden] { display: none; }
+.view-head { display: flex; align-items: baseline; gap: var(--sp-4); margin-bottom: var(--sp-4); }
+.view-head h1 { font-size: var(--fs-22); font-weight: 600; letter-spacing: var(--track-display); }
+.view-head p { color: var(--muted); font-size: var(--fs-13); }
+
+/* ══ widgets ══ */
+.widget {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.widget-head {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--widget-pad);
+  border-bottom: 1px solid var(--border);
+}
+.widget-head h2 { font-size: var(--fs-16); font-weight: 600; letter-spacing: var(--track-tight); white-space: nowrap; }
+.widget-head .sub { font-size: var(--fs-12); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.widget-head .spacer { margin-left: auto; }
+.widget-body { padding: var(--widget-pad); }
+.widget-body.flush { padding: 0; }
+
+.grid { display: grid; gap: var(--grid-gap); grid-template-columns: repeat(12, 1fr); }
+.grid.top { align-items: start; }
+.col-8 { grid-column: span 8; }
+.col-4 { grid-column: span 4; }
+.col-5 { grid-column: span 5; }
+.col-6 { grid-column: span 6; }
+.col-7 { grid-column: span 7; }
+.col-12 { grid-column: span 12; }
+@media (max-width: 1180px) {
+  .col-8, .col-4, .col-5, .col-7 { grid-column: span 12; }
+}
+
+/* ══ KPI strip ══ */
+.kpi-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--grid-gap); margin-bottom: var(--grid-gap); }
+@media (max-width: 900px) { .kpi-strip { grid-template-columns: repeat(2, 1fr); } }
+.kpi {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md);
+  padding: var(--kpi-pad); text-align: left; display: block; width: 100%;
+  transition: border-color var(--dur-2) var(--ease-standard), background var(--dur-2) var(--ease-standard);
+}
+.kpi:hover { border-color: var(--border-strong); background: var(--surface-2); }
+.kpi .kpi-label { display: block; }
+.kpi-value { display: block; font-size: var(--fs-28); font-weight: 600; letter-spacing: var(--track-display); line-height: 1.15; margin-top: 6px; }
+.kpi-delta { display: block; font-size: var(--fs-12); color: var(--muted); margin-top: 4px; }
+.kpi-delta.warn { color: var(--warn); }
+.kpi-delta.ok { color: var(--ok); }
+.kpi[data-od-id]:hover .kpi-value { color: var(--fg); }
+
+/* ══ table ══ */
+.tbl { width: 100%; border-collapse: collapse; font-size: var(--fs-cell); }
+.tbl th {
+  text-align: left; font-weight: 500; color: var(--muted);
+  font-size: var(--fs-11); letter-spacing: var(--track-label); text-transform: uppercase;
+  padding: var(--cell-py) var(--cell-px);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  position: sticky; top: 0; z-index: 1;
+}
+.tbl td { padding: var(--cell-py) var(--cell-px); border-bottom: 1px solid var(--border-soft); vertical-align: middle; }
+.tbl tbody tr:hover td { background: var(--surface-2); }
+.tbl tbody tr.is-new td { animation: op-feed-in var(--dur-3) var(--ease-out); }
+.tbl .num-col { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.tbl-foot {
+  display: flex; align-items: center; gap: var(--sp-4);
+  padding: var(--cell-py) var(--cell-px);
+  font-size: var(--fs-12); color: var(--muted);
+  border-top: 1px solid var(--border); background: var(--surface-2);
+}
+.tbl-foot .spacer { margin-left: auto; }
+.sortable { cursor: pointer; user-select: none; }
+.sortable:hover { color: var(--fg); }
+.sortable::after { content: "↕"; opacity: .35; margin-left: 5px; font-size: 10px; }
+.sortable[aria-sort="ascending"]::after { content: "↑"; opacity: 1; }
+.sortable[aria-sort="descending"]::after { content: "↓"; opacity: 1; }
+
+.svc { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.svc img { width: 16px; height: 16px; object-fit: contain; }
+.svc .svc-name { color: var(--muted); font-size: var(--fs-12); }
+.title-cell { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.title-cell .t { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.title-cell .s { font-size: var(--fs-12); color: var(--muted); }
+.quality { font-family: var(--font-mono); font-size: var(--fs-12); color: var(--fg-2); white-space: nowrap; }
+
+.bar { width: 100%; min-width: 96px; height: 6px; border-radius: var(--r-pill); background: var(--surface-3); overflow: hidden; }
+.bar > i { display: block; height: 100%; background: var(--accent); border-radius: inherit; transition: width var(--dur-4) var(--ease-out); }
+.bar.failed > i { background: var(--danger); }
+.bar.paused > i { background: var(--stale); }
+.bar-wrap { display: flex; align-items: center; gap: var(--sp-2); }
+.bar-wrap .pct { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: var(--fs-12); width: 38px; text-align: right; color: var(--fg-2); }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: var(--fs-12); font-weight: 500; line-height: 1.6;
+  padding: 1px 8px; border-radius: var(--r-pill);
+  border: 1px solid var(--border); color: var(--fg-2); background: var(--surface-2);
+  white-space: nowrap;
+}
+.chip.ok { color: var(--ok); background: var(--ok-soft); border-color: transparent; }
+.chip.warn { color: var(--warn); background: var(--warn-soft); border-color: transparent; }
+.chip.danger { color: var(--danger); background: var(--danger-soft); border-color: transparent; }
+.chip.neutral { color: var(--muted); }
+.chip .dot { width: 5px; height: 5px; }
+
+.row-actions { display: flex; gap: var(--sp-1); justify-content: flex-end; }
+.icon-action {
+  width: 26px; height: 26px; display: grid; place-items: center;
+  border-radius: var(--r-xs); color: var(--muted);
+}
+.icon-action:hover { color: var(--fg); background: var(--surface-3); }
+.icon-action.danger:hover { color: var(--danger); background: var(--danger-soft); }
+.icon-action svg { width: 14px; height: 14px; }
+.icon-action[disabled] { opacity: .45; cursor: not-allowed; }
+.icon-action.is-pending svg { animation: op-spin 900ms linear infinite; }
+.icon-action.is-ok { color: var(--ok); }
+.icon-action.is-error { color: var(--danger); }
+
+tr.state-pending td { background: var(--accent-soft); }
+tr.state-success td { animation: op-row-settle var(--dur-4) var(--ease-out); }
+tr.state-error td { background: var(--danger-soft); }
+.state-tag {
+  display: inline-flex; align-items: center;
+  font-size: var(--fs-11); font-weight: 600; letter-spacing: var(--track-label); text-transform: uppercase;
+  color: var(--muted);
+  padding: 1px 8px; border-radius: var(--r-pill);
+  border: 1px solid var(--border); background: var(--surface-2);
+  white-space: nowrap;
+}
+.state-tag.pending { color: var(--accent); background: var(--accent-soft); border-color: transparent; }
+.state-tag.success { color: var(--ok); background: var(--ok-soft); border-color: transparent; }
+.state-tag.error { color: var(--danger); background: var(--danger-soft); border-color: transparent; }
+
+/* ══ feed ══ */
+.feed { max-height: 420px; overflow: auto; }
+.feed-item {
+  display: grid; grid-template-columns: 26px 1fr auto; gap: var(--sp-3);
+  align-items: start;
+  padding: var(--feed-item-py) var(--widget-pad);
+  border-bottom: 1px solid var(--border-soft);
+  animation: op-feed-in var(--dur-3) var(--ease-out);
+}
+.feed-item:last-child { border-bottom: 0; }
+.feed-item .ficon { width: 26px; height: 26px; border-radius: var(--r-sm); display: grid; place-items: center; background: var(--surface-2); border: 1px solid var(--border); }
+.feed-item .ficon img { width: 15px; height: 15px; object-fit: contain; }
+.feed-item .ftitle { display: block; font-size: var(--fs-feed); font-weight: 500; }
+.feed-item .fsub { display: block; font-size: var(--fs-12); color: var(--muted); margin-top: 1px; }
+.feed-item .ftime { font-family: var(--font-mono); font-size: var(--fs-12); color: var(--faint); white-space: nowrap; }
+.feed-item { position: relative; padding-left: calc(var(--widget-pad) + 3px); }
+.feed-item::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 2px; border-radius: 1px; background: transparent; }
+.feed-item.sev-error::before { background: var(--danger); }
+.feed-item.sev-warn::before { background: var(--warn); }
+.feed-item.sev-error .ftitle { color: var(--danger); }
+.feed-item .fnew { font-size: var(--fs-11); color: var(--accent); text-transform: uppercase; letter-spacing: var(--track-label); }
+
+/* ══ streams ══ */
+.stream {
+  display: grid; grid-template-columns: 40px 1fr auto; gap: var(--sp-3);
+  align-items: center; padding: var(--feed-item-py) var(--widget-pad);
+  border-bottom: 1px solid var(--border-soft);
+}
+.stream:last-child { border-bottom: 0; }
+.stream img.poster { width: 40px; border-radius: var(--r-xs); border: 1px solid var(--border); }
+.stream .stitle { display: block; font-weight: 500; }
+.stream .smeta { display: flex; gap: var(--sp-2); flex-wrap: wrap; font-size: var(--fs-12); color: var(--muted); }
+.stream .smeta + .smeta { margin-top: 2px; }
+.stream .sright { text-align: right; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+.cpu-meter { width: 136px; }
+.cpu-meter .cm-top { display: flex; justify-content: space-between; gap: var(--sp-2); font-size: var(--fs-11); color: var(--muted); margin-bottom: 3px; white-space: nowrap; }
+.cpu-meter .cm-top .v { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.cpu-meter .bar > i { background: var(--ok); }
+.cpu-meter.warn .bar > i { background: var(--warn); }
+.cpu-meter.crit .bar > i { background: var(--danger); }
+
+/* ══ disk / containers / errors ══ */
+.disk-row { display: flex; align-items: center; gap: var(--sp-4); }
+.temp { font-size: var(--fs-28); font-weight: 600; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.temp.ok { color: var(--ok); }
+.temp.warn { color: var(--warn); }
+.temp.crit { color: var(--danger); }
+.spark { flex: 1; min-width: 90px; height: 34px; }
+.dl { display: flex; justify-content: space-between; gap: var(--sp-4); padding: 6px 0; border-bottom: 1px solid var(--border-soft); font-size: var(--fs-13); }
+.dl:last-child { border-bottom: 0; }
+.dl dt { color: var(--muted); }
+.dl dd { color: var(--fg-2); }
+.masked { font-family: var(--font-mono); color: var(--muted); letter-spacing: 0.06em; }
+
+.err-list li {
+  display: grid; grid-template-columns: auto 1fr auto; gap: var(--sp-3); align-items: start;
+  padding: var(--feed-item-py) var(--widget-pad); border-bottom: 1px solid var(--border-soft);
+  font-size: var(--fs-13);
+}
+.err-list li:last-child { border-bottom: 0; }
+.sev { width: 3px; align-self: stretch; border-radius: var(--r-pill); background: var(--muted); }
+.sev.error { background: var(--danger); }
+.sev.warning { background: var(--warn); }
+.sev.info { background: var(--accent); }
+.err-time { font-family: var(--font-mono); font-size: var(--fs-12); color: var(--faint); white-space: nowrap; }
+
+/* ══ stale / banner ══ */
+.banner {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: 9px var(--sp-4); margin-bottom: var(--grid-gap);
+  border: 1px solid var(--warn); border-radius: var(--r-md);
+  background: var(--warn-soft); color: var(--warn);
+  font-size: var(--fs-13);
+}
+.banner .btext { color: var(--fg); }
+.banner .btext b { display: block; font-weight: 600; }
+.banner .spacer { margin-left: auto; }
+.is-stale .stale-fade { opacity: .45; filter: saturate(.15); transition: opacity var(--dur-4) var(--ease-out), filter var(--dur-4) var(--ease-out); }
+.stale-fade { transition: opacity var(--dur-4) var(--ease-out), filter var(--dur-4) var(--ease-out); }
+
+/* ══ empty states ══ */
+.empty {
+  display: grid; place-items: center; text-align: center;
+  padding: var(--sp-10) var(--sp-5);
+}
+.empty .art { color: var(--faint); margin-bottom: var(--sp-4); }
+.empty .art svg { width: 76px; height: 46px; }
+.empty h3 { font-size: var(--fs-16); font-weight: 600; margin-bottom: 4px; }
+.empty p { color: var(--muted); font-size: var(--fs-13); max-width: 42ch; margin-bottom: var(--sp-4); }
+.empty-panel {
+  border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface);
+  display: flex; flex-direction: column;
+}
+.empty-panel > .panel-head { padding: var(--sp-3) var(--sp-4); border-bottom: 1px solid var(--border); }
+.empty-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--grid-gap); }
+@media (max-width: 980px) { .empty-grid { grid-template-columns: 1fr; } }
+
+/* ══ buttons ══ */
+.btn-sm { padding: 3px 10px; font-size: var(--fs-12); }
+.btn {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  padding: 7px 14px; border-radius: var(--r-sm);
+  font-size: var(--fs-13); font-weight: 500;
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--fg);
+  transition: background var(--dur-2) var(--ease-standard), border-color var(--dur-2) var(--ease-standard);
+}
+.btn:hover { background: var(--surface-3); border-color: var(--border-strong); }
+.btn svg { width: 14px; height: 14px; }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-on); }
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn-primary:active { background: var(--accent-active); }
+.btn-ghost { background: none; border-color: transparent; color: var(--muted); }
+.btn-ghost:hover { color: var(--fg); background: var(--surface-2); }
+.btn-danger { color: var(--danger); border-color: var(--danger); background: none; }
+.btn-danger:hover { background: var(--danger-soft); border-color: var(--danger); }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+.btn.is-busy { pointer-events: none; }
+.btn.is-busy svg { animation: op-spin 900ms linear infinite; }
+
+/* ══ forms ══ */
+.field { display: flex; flex-direction: column; gap: 5px; margin-bottom: var(--sp-4); }
+.field label { font-size: var(--fs-12); color: var(--muted); font-weight: 500; }
+.input {
+  width: 100%; padding: 8px 11px; font: inherit; font-size: var(--fs-13);
+  background: var(--surface-inset); color: var(--fg);
+  border: 1px solid var(--border-strong); border-radius: var(--r-sm);
+}
+.input::placeholder { color: var(--faint); }
+.input:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: var(--accent); }
+.input.mono { font-family: var(--font-mono); }
+.hint { font-size: var(--fs-12); color: var(--muted); }
+.hint code { font-family: var(--font-mono); color: var(--fg-2); background: var(--surface-2); padding: 1px 5px; border-radius: var(--r-xs); }
+
+/* ══ onboarding ══ */
+.steps { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-5); }
+.step-pip { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-12); color: var(--muted); }
+.step-pip .pip { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--border-strong); font-size: var(--fs-11); font-family: var(--font-mono); }
+.step-pip[data-state="active"] { color: var(--fg); }
+.step-pip[data-state="active"] .pip { border-color: var(--accent); color: var(--accent); }
+.step-pip[data-state="done"] .pip { border-color: var(--ok); color: var(--ok); }
+.step-sep { width: 28px; height: 1px; background: var(--border); }
+.svc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
+@media (max-width: 860px) { .svc-grid { grid-template-columns: repeat(2, 1fr); } }
+.svc-tile {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-md);
+  background: var(--surface); text-align: left;
+}
+.svc-tile:hover { border-color: var(--border-strong); background: var(--surface-2); }
+.svc-tile img { width: 22px; height: 22px; object-fit: contain; }
+.svc-tile .n { font-weight: 500; font-size: var(--fs-13); }
+.svc-tile .t { font-size: var(--fs-12); color: var(--muted); }
+.svc-tile .pick { margin-left: auto; width: 16px; height: 16px; border: 1px solid var(--border-strong); border-radius: var(--r-xs); display: grid; place-items: center; }
+.svc-tile[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.svc-tile[aria-pressed="true"] .pick { border-color: var(--accent); background: var(--accent); color: var(--accent-on); }
+.svc-tile .pick svg { width: 11px; height: 11px; }
+
+.field-hint { display: block; margin-top: 5px; font-size: var(--fs-12); color: var(--muted); line-height: 1.45; }
+.test-result { display: flex; align-items: center; gap: 6px; font-size: var(--fs-12); margin-top: 6px; }
+.test-result.ok { color: var(--ok); }
+.test-result.fail { color: var(--danger); }
+.mini-dash { border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; background: var(--surface); }
+.mini-dash .mini-row { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; align-items: center; gap: 2px var(--sp-2); padding: 7px var(--sp-3); border-bottom: 1px solid var(--border-soft); font-size: var(--fs-12); }
+.mini-dash .mini-row:last-child { border-bottom: 0; }
+.mini-dash .mini-row .k { color: var(--muted); min-width: 0; }
+.mini-dash .mini-row .v { text-align: right; }
+.mini-dash .mini-row .v { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.mini-sec { padding: 6px var(--sp-3); font-size: var(--fs-11); font-weight: 600; letter-spacing: var(--track-label); text-transform: uppercase; color: var(--muted); background: var(--surface-2); border-bottom: 1px solid var(--border-soft); }
+.mini-feed-item { display: grid; grid-template-columns: 18px 1fr auto; gap: var(--sp-2); align-items: center; padding: 6px var(--sp-3); border-bottom: 1px solid var(--border-soft); font-size: var(--fs-12); }
+.mini-feed-item:last-child { border-bottom: 0; }
+.mini-fi { width: 18px; height: 18px; border-radius: var(--r-xs); display: grid; place-items: center; background: var(--surface-2); border: 1px solid var(--border); }
+.mini-fi img { width: 12px; height: 12px; object-fit: contain; }
+.mini-ft { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-fm { font-family: var(--font-mono); font-size: var(--fs-11); color: var(--faint); white-space: nowrap; }
+.mini-feed-item.sev-error .mini-ft { color: var(--danger); }
+.mini-bar { grid-column: 1 / -1; height: 4px; border-radius: var(--r-pill); background: var(--surface-3); overflow: hidden; }
+.mini-bar > i { display: block; height: 100%; background: var(--accent); }
+
+/* ══ settings ══ */
+.tabs-line { display: flex; gap: var(--sp-5); border-bottom: 1px solid var(--border); margin-bottom: var(--sp-5); }
+.tabs-line button { padding: 8px 0; font-size: var(--fs-14); color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tabs-line button:hover { color: var(--fg); }
+.tabs-line button[aria-current="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+.set-row { display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-3) 0; border-bottom: 1px solid var(--border-soft); }
+.set-row:last-child { border-bottom: 0; }
+.set-row .grow { flex: 1; min-width: 0; }
+.set-row .t { font-size: var(--fs-13); font-weight: 500; }
+.set-row .d { font-size: var(--fs-12); color: var(--muted); }
+.radio-row { display: flex; gap: var(--sp-4); flex-wrap: wrap; }
+.radio-row label { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-13); color: var(--fg-2); }
+.radio-row input { accent-color: var(--accent); }
+.settings-panel { margin-bottom: var(--sp-6); scroll-margin-top: 96px; }
+.conn-summary { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border-soft); border-radius: var(--r-sm); overflow: hidden; }
+.conn-summary-item { display: grid; grid-template-columns: 22px 1fr auto auto; align-items: center; gap: var(--sp-3); padding: 7px var(--sp-3); border-bottom: 1px solid var(--border-soft); font-size: var(--fs-12); }
+.conn-summary-item:last-child { border-bottom: 0; }
+.conn-summary-item .cs-name { font-weight: 500; }
+.conn-summary-item .cs-meta { font-family: var(--font-mono); color: var(--muted); }
+.conn-head, .conn-row { display: grid; grid-template-columns: minmax(170px, 1.6fr) minmax(150px, 1.3fr) minmax(120px, 1fr) minmax(110px, 1fr) minmax(120px, 1fr) 150px; align-items: center; gap: var(--sp-3); padding: var(--sp-2) var(--sp-4); }
+.conn-head { font-size: var(--fs-11); letter-spacing: var(--track-label); text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); background: var(--surface-2); }
+.conn-row { border-bottom: 1px solid var(--border-soft); }
+.conn-row:last-child { border-bottom: 0; }
+.conn-svc { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+.conn-name { display: block; font-size: var(--fs-13); font-weight: 500; }
+.conn-type { display: block; font-size: var(--fs-12); color: var(--muted); }
+.conn-endpoint, .conn-key, .conn-sync { font-size: var(--fs-12); color: var(--muted); }
+.conn-key { color: var(--fg-2); }
+.conn-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--sp-2); }
+.ta-r { text-align: right; }
+.settings-panel.is-active .widget { border-color: var(--border-strong); }
+.settings-panel.is-active .widget-head h2::after { content: '·'; margin-left: 8px; color: var(--accent); }
+.layout-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: var(--sp-3); }
+.layout-grid .layout-cell { cursor: grab; }
+.layout-grid .layout-cell:active { cursor: grabbing; }
+.layout-grid .layout-cell:hover { border-color: var(--accent); background: var(--surface-2); }
+.layout-grid .layout-cell:hover .drag { color: var(--accent); }
+.layout-cell {
+  border: 1px dashed var(--border-strong); border-radius: var(--r-sm);
+  padding: var(--sp-3); min-height: 74px; background: var(--surface-inset);
+  display: flex; flex-direction: column; gap: 4px; justify-content: center;
+}
+.layout-cell .lc-title { font-size: var(--fs-13); font-weight: 500; }
+.layout-cell .lc-size { font-size: var(--fs-11); color: var(--muted); font-family: var(--font-mono); }
+.layout-cell .drag { color: var(--faint); margin-left: auto; }
+
+/* ══ history ══ */
+.chart-wrap { position: relative; }
+.chart-wrap svg { width: 100%; height: auto; }
+.chart-legend { display: flex; gap: var(--sp-4); font-size: var(--fs-12); color: var(--muted); }
+.chart-legend .sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; margin-right: 6px; }
+.tip {
+  position: absolute; pointer-events: none; opacity: 0;
+  transform: translate(-50%, -100%);
+  background: var(--surface-3); border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm); padding: 6px 9px; font-size: var(--fs-12);
+  box-shadow: var(--shadow-2); white-space: nowrap; transition: opacity var(--dur-2) var(--ease-standard);
+}
+.tip.on { opacity: 1; }
+.tip .tv { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--fg); }
+.stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--grid-gap); margin-top: var(--sp-4); }
+.stat-cell { border: 1px solid var(--border); border-radius: var(--r-md); padding: var(--sp-3) var(--sp-4); background: var(--surface); }
+.stat-cell .v { font-size: var(--fs-22); font-weight: 600; font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: var(--track-display); }
+.stat-cell .k { font-size: var(--fs-12); color: var(--muted); }
+
+/* ══ toast ══ */
+.toast-host { position: fixed; right: var(--sp-5); bottom: var(--sp-5); display: flex; flex-direction: column; gap: var(--sp-2); z-index: var(--z-toast); }
+.toast {
+  display: flex; align-items: flex-start; gap: var(--sp-3);
+  min-width: 280px; max-width: 380px;
+  padding: 10px var(--sp-4);
+  background: var(--surface-3); border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r-sm); box-shadow: var(--shadow-3);
+  animation: op-toast-in var(--dur-3) var(--ease-out);
+  font-size: var(--fs-13);
+}
+.toast.error { border-left-color: var(--danger); }
+.toast.ok { border-left-color: var(--ok); }
+.toast.err { border-left-color: var(--danger); }
+.toast.info { border-left-color: var(--accent); }
+.toast .ic { display: grid; place-items: center; width: 18px; height: 18px; flex: 0 0 18px; margin-top: 1px; }
+.toast .ic svg { width: 16px; height: 16px; }
+.toast.ok .ic { color: var(--ok); }
+.toast.err .ic { color: var(--danger); }
+.toast.info .ic { color: var(--accent); }
+.toast .t { display: block; font-weight: 500; }
+.toast .s { display: block; color: var(--muted); font-size: var(--fs-12); margin-top: 2px; }
+/* reference panel: toasts are shown inline, so they fill the card width */
+.toast-stack .toast { min-width: 0; max-width: none; }
+.toast .tt { font-weight: 500; }
+.toast .tb { color: var(--muted); font-size: var(--fs-12); }
+.toast .tx { margin-left: auto; color: var(--muted); }
+
+/* ══ mobile frame ══ */
+.phone {
+  width: 390px; border: 1px solid var(--border-strong); border-radius: 26px;
+  background: var(--bg); overflow: hidden; box-shadow: var(--shadow-3);
+}
+.phone-bar { display: flex; align-items: center; gap: var(--sp-2); padding: 10px var(--sp-4); border-bottom: 1px solid var(--border); background: var(--surface); }
+.phone-bar .ttl { font-weight: 600; font-size: var(--fs-13); }
+.phone-body { height: 560px; overflow: auto; }
+.phone-tabs { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--border); background: var(--surface); }
+.phone-tabs button { padding: 9px 0; font-size: var(--fs-11); color: var(--muted); display: grid; gap: 3px; justify-items: center; }
+.phone-tabs button svg { width: 16px; height: 16px; }
+.phone-tabs .tab-badge { min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--warn-soft); color: var(--warn); font-size: 10px; font-weight: 600; display: grid; place-items: center; }
+.phone-tabs button[aria-current="page"] { color: var(--accent); }
+.m-card { background: var(--surface); border-bottom: 1px solid var(--border); }
+.m-row { display: grid; grid-template-columns: 34px 1fr auto auto; gap: var(--sp-3); padding: 10px var(--sp-4); align-items: center; }
+.m-row img.poster { width: 34px; border-radius: var(--r-xs); border: 1px solid var(--border); }
+.m-row .t { font-size: var(--fs-13); font-weight: 500; }
+.m-row .s { font-size: var(--fs-11); color: var(--muted); }
+.m-expand { padding: 0 var(--sp-4) 12px; display: grid; gap: 6px; }
+.m-expand .bar { min-width: 0; }
+.mobile-wrap { display: flex; gap: var(--sp-8); align-items: flex-start; flex-wrap: wrap; }
+.phone-fig { margin: 0; display: grid; gap: var(--sp-3); }
+.phone-fig figcaption { font-size: var(--fs-12); color: var(--muted); line-height: 1.45; max-width: 390px; }
+.mobile-notes { flex: 1 1 320px; min-width: 280px; align-self: flex-start; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--sp-5); }
+.mobile-notes h3 { font-size: var(--fs-15); font-weight: 600; margin-bottom: var(--sp-3); }
+.rules-list { display: grid; gap: var(--sp-3); margin: 0; }
+.rules-list > div { display: grid; gap: 3px; }
+.rules-list dt { font-size: var(--fs-12); font-weight: 600; color: var(--fg-2); }
+.rules-list dd { margin: 0; font-size: var(--fs-12); color: var(--muted); line-height: 1.5; }
+
+/* ── density comparison panes ───────────────────────────────────────────── */
+.density-compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--grid-gap); }
+.density-pane { min-width: 0; border: 1px solid var(--border); border-radius: var(--r-md); overflow: hidden; background: var(--surface); }
+.density-label { display: flex; align-items: baseline; gap: var(--sp-2); padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--border); background: var(--surface-2); font-size: var(--fs-12); font-weight: 600; }
+.density-label .mono { margin-left: auto; font-size: var(--fs-11); font-weight: 400; color: var(--muted); }
+.density-pane .tbl-wrap { max-height: none; overflow: visible; }
+.density-pane .tbl { width: 100%; }
+.density-pane .tbl th { display: none; }
+.density-pane .tbl td { white-space: nowrap; }
+.density-pane .tbl td:nth-child(2) { white-space: normal; }
+.density-pane .tbl td:nth-child(2) .title-cell .s { display: none; }
+.density-pane .tbl td:nth-child(4) .bar { min-width: 44px; }
+.density-pane .tbl td:nth-child(4) .bar-wrap .pct { width: 30px; }
+.density-pane .tbl td:nth-child(7) .row-actions { gap: 2px; }
+.density-pane .feed { margin: 0; }
+.density-pane .feed-item { border-top: 1px solid var(--border-soft); }
+.density-pane .feed-item:last-child { border-bottom: 0; }
+@media (max-width: 900px) { .density-compare { grid-template-columns: minmax(0, 1fr); } }
+
+.state-legend { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-3); padding: var(--sp-4); border-top: 1px solid var(--border); }
+.legend-item { display: flex; flex-direction: column; gap: 5px; }
+.legend-txt { font-size: var(--fs-12); color: var(--muted); line-height: 1.45; }
+.toast-stack { display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-4); }
+.stale-demo { padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); }
+.stale-demo .banner { margin-bottom: 0; border-color: var(--stale); background: var(--stale-soft); color: var(--stale); }
+.stale-demo .banner .btext { color: var(--fg-2); }
+.stale-fade .kpi-value, .stale-fade .kpi-label { color: var(--muted); }
+.stale-fade .kpi { border-color: var(--border); }
+.stale-fade { filter: grayscale(.85); opacity: .58; transition: filter var(--dur-3) var(--ease-out), opacity var(--dur-3) var(--ease-out); }
+.stale-demo:hover .stale-fade { filter: grayscale(.6); opacity: .6; }
+
+/* ══ responsive: the real breakpoint (<= 720px) ══ */
+@media (max-width: 720px) {
+  .page { padding: var(--sp-3); }
+  .topbar { height: auto; flex-wrap: wrap; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); }
+  .tabs { margin-left: 0; order: 3; width: 100%; overflow-x: auto; }
+  .topbar-right { width: 100%; flex-wrap: wrap; gap: var(--sp-2); }
+  .kpi-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid { grid-template-columns: 1fr; }
+  .grid > [class*="col-"] { grid-column: span 1 !important; }
+  .empty-grid, .svc-grid, .layout-grid, .stat-row { grid-template-columns: 1fr; }
+  .tbl th:nth-child(3), .tbl td:nth-child(3),
+  .tbl th:nth-child(5), .tbl td:nth-child(5) { display: none; }
+  .title-cell .s { display: none; }
+  .phone { width: 100%; }
+}
+
+/* ══ misc ══ */
+.stack { display: flex; flex-direction: column; gap: var(--sp-4); }
+.row { display: flex; align-items: center; gap: var(--sp-3); }
+.row.wrap { flex-wrap: wrap; }
+.spacer { margin-left: auto; }
+.divider { height: 1px; background: var(--border); }
+.callout {
+  border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  background: var(--surface); border-radius: var(--r-sm);
+  padding: var(--sp-3) var(--sp-4); font-size: var(--fs-13); color: var(--fg-2);
+}
+.callout b { color: var(--fg); }
+.spec-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--grid-gap); }
+@media (max-width: 980px) { .spec-grid { grid-template-columns: 1fr; } }
+.swatch { border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; }
+.swatch .chipc { height: 46px; }
+.swatch .nm { padding: 6px 10px; font-size: var(--fs-12); font-family: var(--font-mono); color: var(--muted); }
+.swatch .typechip { display: flex; align-items: baseline; justify-content: flex-start; padding: 0 12px; letter-spacing: var(--track-tight); }
+.swatch .spchip { display: flex; align-items: center; }
+.foot-note { margin-top: var(--sp-6); padding-top: var(--sp-4); border-top: 1px solid var(--border); font-size: var(--fs-12); color: var(--faint); }
+.foot-note a { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ══ product chrome ══ -->
+  <header class="topbar" data-od-id="topbar">
+    <div class="brand" data-od-id="brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h4l3-7 4 14 3-7h6"/></svg>
+      <span>OpsPulse</span>
+    </div>
+    <nav class="tabs" data-od-id="primary-nav">
+      <button class="tab" data-nav="dashboard" aria-current="page" data-i18n="nav.dashboard">Dashboard</button>
+      <button class="tab" data-nav="history" data-i18n="nav.history">History</button>
+      <button class="tab" data-nav="settings" data-i18n="nav.settings">Settings</button>
+    </nav>
+    <div class="topbar-right">
+      <span class="live-pill" data-od-id="connection-pill"><i class="dot live"></i><span data-i18n="topbar.connected">Live</span></span>
+      <span class="demo-chip" data-i18n="app.demoBadge">Demo data</span>
+      <div class="seg" role="group" aria-label="Language">
+        <button data-lang="da" aria-pressed="false">DA</button>
+        <button data-lang="en" aria-pressed="true">EN</button>
+      </div>
+      <div class="seg" role="group" aria-label="Density">
+        <button data-density-set="comfortable" aria-pressed="true" data-i18n="topbar.densityComfortable">Comfortable</button>
+        <button data-density-set="compact" aria-pressed="false" data-i18n="topbar.densityCompact">Compact</button>
+      </div>
+      <button class="icon-btn" id="theme-toggle" title="Theme" data-od-id="theme-toggle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ══ reference-only view switcher ══ -->
+  <div class="refbar" data-od-id="ref-switcher">
+    <span class="label" data-i18n="nav.viewSwitcher">Reference views</span>
+    <nav>
+      <button data-view="dashboard" aria-pressed="true" data-i18n="nav.refDashboard">Dashboard</button>
+      <button data-view="stale" aria-pressed="false" data-i18n="nav.refStale">Stale connection</button>
+      <button data-view="history" aria-pressed="false" data-i18n="nav.refHistory">History / drilldown</button>
+      <button data-view="onboarding" aria-pressed="false" data-i18n="nav.refOnboarding">Onboarding</button>
+      <button data-view="settings" aria-pressed="false" data-i18n="nav.refSettings">Settings</button>
+      <button data-view="empty" aria-pressed="false" data-i18n="nav.refEmpty">Empty states</button>
+      <button data-view="mobile" aria-pressed="false" data-i18n="nav.refMobile">Mobile</button>
+      <button data-view="states" aria-pressed="false" data-i18n="nav.refStates">States</button>
+      <button data-view="spec" aria-pressed="false" data-i18n="nav.refSpec">Tokens &amp; spec</button>
+    </nav>
+    <span class="spacer" data-i18n="nav.refNote">OpsPulse · design reference</span>
+  </div>
+
+  <main class="page" id="content">
+
+    <!-- ══════════ DASHBOARD ══════════ -->
+    <section class="view" id="view-dashboard" data-od-id="dashboard-view">
+      <div id="live-banner-slot"></div>
+
+      <div class="kpi-strip" data-od-id="kpi-strip">
+        <button class="kpi" data-metric="downloads" data-od-id="kpi-downloads">
+          <span class="label kpi-label" data-i18n="kpi.downloads">Downloads today</span>
+          <span class="kpi-value num" data-count="12">0</span>
+          <span class="kpi-delta" data-i18n="kpi.downloadsDelta" data-i18n-args='{"n":"4"}'>4 more than yesterday</span>
+        </button>
+        <button class="kpi" data-metric="streams" data-od-id="kpi-streams">
+          <span class="label kpi-label" data-i18n="kpi.activeStreams">Active streams</span>
+          <span class="kpi-value num" data-count="3">0</span>
+          <span class="kpi-delta warn" data-i18n="kpi.activeStreamsDelta" data-i18n-args='{"n":"1"}'>1 transcoding</span>
+        </button>
+        <button class="kpi" data-metric="queue" data-od-id="kpi-queue">
+          <span class="label kpi-label" data-i18n="kpi.queueSize">Items in queue</span>
+          <span class="kpi-value num" data-count="12480">0</span>
+          <span class="kpi-delta" data-i18n="kpi.queueSizeDelta" data-i18n-args='{"n":"31"}'>31 paused</span>
+        </button>
+        <button class="kpi" data-metric="disk" data-od-id="kpi-disk">
+          <span class="label kpi-label" data-i18n="kpi.diskTemp">Disk temperature</span>
+          <span class="kpi-value num" data-count="44">0</span>
+          <span class="kpi-delta" data-i18n="kpi.diskTempDelta" data-i18n-args='{"n":"51"}'>Peak 51° today</span>
+        </button>
+      </div>
+
+      <div class="grid">
+        <!-- queue -->
+        <section class="widget col-8" data-od-id="widget-queue">
+          <div class="widget-head">
+            <h2 data-i18n="queue.title">Queue</h2>
+            <span class="sub" data-i18n="queue.subtitle">Unified across Radarr and Sonarr</span>
+            <div class="spacer"></div>
+            <input class="input mono" id="queue-search" style="width:220px" data-i18n-attr="placeholder:queue.searchPlaceholder" placeholder="Filter by title" aria-label="Filter queue" />
+          </div>
+          <div class="widget-body flush">
+            <div style="display:flex;gap:6px;padding:8px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap" data-od-id="queue-filters">
+              <button class="chip" data-filter="all" aria-pressed="true" data-i18n="queue.filterAll">All</button>
+              <button class="chip" data-filter="downloading" aria-pressed="false" data-i18n="queue.filterDownloading">Downloading</button>
+              <button class="chip" data-filter="seeding" aria-pressed="false" data-i18n="queue.filterSeeding">Seeding</button>
+              <button class="chip" data-filter="paused" aria-pressed="false" data-i18n="queue.filterPaused">Paused</button>
+              <button class="chip" data-filter="failed" aria-pressed="false" data-i18n="queue.filterFailed">Failed</button>
+            </div>
+            <div style="max-height:420px;overflow:auto">
+              <table class="tbl" data-od-id="queue-table">
+                <thead>
+                  <tr>
+                    <th class="sortable" data-sort="service" data-i18n="queue.colService">Service</th>
+                    <th class="sortable" data-sort="title" data-i18n="queue.colTitle">Title</th>
+                    <th class="sortable" data-sort="quality" data-i18n="queue.colQuality">Quality</th>
+                    <th class="sortable" data-sort="progress" data-i18n="queue.colProgress">Progress</th>
+                    <th class="sortable" data-sort="eta" data-i18n="queue.colEta">ETA</th>
+                    <th class="sortable" data-sort="status" data-i18n="queue.colStatus">Status</th>
+                    <th style="text-align:right" data-i18n="queue.colActions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="queue-body"></tbody>
+              </table>
+            </div>
+            <div class="tbl-foot">
+              <span id="queue-count" class="num"></span>
+              <span id="queue-virtual" class="num"></span>
+              <span class="spacer"></span>
+              <span id="queue-state-legend" class="label"></span>
+            </div>
+          </div>
+        </section>
+
+        <!-- activity feed -->
+        <section class="widget col-4" data-od-id="widget-activity">
+          <div class="widget-head">
+            <h2 data-i18n="feed.title">Activity</h2>
+            <span class="sub" data-i18n="feed.subtitle">Events from every connected service</span>
+            <div class="spacer"></div>
+            <button class="btn btn-ghost" data-i18n="feed.showMore">Show more</button>
+          </div>
+          <div class="widget-body flush">
+            <ul class="feed" id="feed-list" data-od-id="feed-list"></ul>
+          </div>
+        </section>
+
+        <!-- streams -->
+        <section class="widget col-4" data-od-id="widget-streams">
+          <div class="widget-head">
+            <h2 data-i18n="streams.title">Active streams</h2>
+            <span class="sub" data-i18n="streams.subtitle">Live from Plex</span>
+          </div>
+          <div class="widget-body flush">
+            <div id="streams-body"></div>
+          </div>
+        </section>
+
+        <!-- disk -->
+        <section class="widget col-4" data-od-id="widget-disk">
+          <div class="widget-head">
+            <h2 data-i18n="disk.title">Disk health</h2>
+            <span class="sub" data-i18n="disk.subtitle">Temperature and SMART status</span>
+          </div>
+          <div class="widget-body">
+            <div class="disk-row">
+              <div>
+                <div class="label" data-i18n="disk.device">Media</div>
+                <div class="temp warn" id="disk-temp">44°</div>
+              </div>
+              <svg class="spark" viewBox="0 0 120 34" preserveAspectRatio="none" id="disk-spark" aria-label="Temperature last 24 hours" role="img"></svg>
+            </div>
+            <dl style="margin-top:12px">
+              <div class="dl"><dt data-i18n="disk.smart">SMART</dt><dd><span class="chip ok"><i class="dot"></i><span data-i18n="disk.smartOk">Passed</span></span></dd></div>
+              <div class="dl"><dt data-i18n="disk.uptime">Uptime</dt><dd class="num">14d 06h 12m</dd></div>
+              <div class="dl"><dt data-i18n="disk.range">Range</dt><dd class="num">38° – 51°</dd></div>
+            </dl>
+            <p class="hint" style="margin-top:10px" data-i18n="disk.thresholdNote">Green below 40° · yellow 40–50° · red above 50°</p>
+            </dl>
+          </div>
+        </section>
+
+        <!-- containers -->
+        <section class="widget col-4" data-od-id="widget-containers">
+          <div class="widget-head">
+            <h2 data-i18n="containers.title">Containers</h2>
+            <span class="sub" data-i18n="containers.subtitle">Docker on the OpsPulse host</span>
+            <div class="spacer"></div>
+            <span class="chip neutral num" id="container-count"></span>
+          </div>
+          <div class="widget-body flush">
+            <ul id="container-list" data-od-id="container-list"></ul>
+          </div>
+        </section>
+
+        <!-- errors -->
+        <section class="widget col-8" data-od-id="widget-errors">
+          <div class="widget-head">
+            <h2 data-i18n="errors.title">Errors</h2>
+            <span class="sub" data-i18n="errors.subtitle">Collected from every service</span>
+            <div class="spacer"></div>
+            <span class="chip num" id="error-count"></span>
+          </div>
+          <div class="widget-body flush">
+            <ul class="err-list" id="error-list" data-od-id="error-list"></ul>
+          </div>
+        </section>
+      </div>
+
+      <p class="foot-note" data-i18n="app.footNote">Media artwork: <a href="https://en.wikipedia.org" rel="noreferrer noopener" target="_blank">Wikipedia</a> (poster art, non-free use for this mock). Service marks are the projects' own logos.</p>
+    </section>
+
+    <!-- ══════════ STALE ══════════ -->
+    <section class="view" id="view-stale" hidden data-od-id="stale-view">
+      <div class="banner" data-od-id="stale-banner">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+        <div class="btext">
+          <b data-i18n="queue.staleTitle">Reconnecting to the OpsPulse backend</b>
+          <span data-i18n="queue.staleBody">Showing the last known values. Live progress and events resume automatically.</span>
+        </div>
+        <div class="spacer"></div>
+        <span class="chip warn"><i class="dot"></i><span data-i18n="topbar.reconnecting">Reconnecting…</span></span>
+      </div>
+
+      <div class="grid" id="stale-grid">
+        <section class="widget col-8 stale-fade" data-od-id="stale-queue">
+          <div class="widget-head"><h2 data-i18n="queue.title">Queue</h2><span class="sub" data-i18n="queue.subtitle">Unified across Radarr and Sonarr</span></div>
+          <div class="widget-body flush"><div id="stale-queue-body"></div></div>
+        </section>
+        <section class="widget col-4 stale-fade" data-od-id="stale-feed">
+          <div class="widget-head"><h2 data-i18n="feed.title">Activity</h2></div>
+          <div class="widget-body flush"><ul class="feed" id="stale-feed-body"></ul></div>
+        </section>
+        <section class="widget col-12 stale-fade" data-od-id="stale-note">
+          <div class="widget-body">
+            <div class="callout" data-i18n="empty.lostBody">OpsPulse cannot reach its backend. The data below is the last known state and is no longer live.</div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- ══════════ HISTORY ══════════ -->
+    <section class="view" id="view-history" hidden data-od-id="history-view">
+      <div class="view-head">
+        <h1 data-i18n="history.title">History</h1>
+        <p data-i18n="history.subtitle">Drill into any metric</p>
+        <div class="spacer"></div>
+        <div class="seg" role="group" aria-label="Range">
+          <button data-range="hour" aria-pressed="false" data-i18n="history.rangeHour">Hour</button>
+          <button data-range="day" aria-pressed="true" data-i18n="history.rangeDay">Day</button>
+          <button data-range="week" aria-pressed="false" data-i18n="history.rangeWeek">Week</button>
+        </div>
+        <button class="btn btn-ghost" id="history-back" data-i18n="history.back">Back to dashboard</button>
+      </div>
+
+      <div class="grid">
+        <section class="widget col-8" data-od-id="history-chart-widget">
+          <div class="widget-head">
+            <h2 id="history-metric-title">Downloads</h2>
+            <span class="sub" id="history-metric-sub">Last 24 hours</span>
+            <div class="spacer"></div>
+            <div class="chart-legend">
+              <span><i class="sw" style="background:var(--viz-cat-1)"></i><span data-i18n="history.legendDownloads">Downloads</span></span>
+              <span><i class="sw" style="background:var(--danger)"></i><span data-i18n="history.legendErrors">Errors</span></span>
+            </div>
+          </div>
+          <div class="widget-body">
+            <div class="chart-wrap" id="chart-wrap" data-od-id="history-chart">
+              <svg id="history-svg" viewBox="0 0 720 260" role="img" aria-label="Downloads and errors over the selected range"></svg>
+              <div class="tip" id="chart-tip"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="widget col-4" data-od-id="history-drill-widget">
+          <div class="widget-head"><h2 id="history-drill-title">Today</h2></div>
+          <div class="widget-body">
+            <div class="stat-row" style="grid-template-columns:1fr;margin-top:0">
+              <div class="stat-cell"><div class="v" id="stat-peak">12</div><div class="k" id="stat-peak-label">Peak per bucket</div></div>
+              <div class="stat-cell"><div class="v" id="stat-total">84</div><div class="k" id="stat-total-label">Total in range</div></div>
+              <div class="stat-cell"><div class="v" id="stat-avg">3.5</div><div class="k" id="stat-avg-label">Average per bucket</div></div>
+            </div>
+            <div class="divider" style="margin:16px 0"></div>
+            <div class="label" style="margin-bottom:8px" data-i18n="errors.count" id="history-error-count">2 errors in the last 24 hours</div>
+            <div class="label" style="margin:12px 0 4px;color:var(--faint)" data-i18n="errors.subtitle">Collected from every service</div>
+            <ul id="history-errors" class="err-list"></ul>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- ══════════ ONBOARDING ══════════ -->
+    <section class="view" id="view-onboarding" hidden data-od-id="onboarding-view">
+      <div class="view-head">
+        <h1 data-i18n="onboarding.step1Title">Pick your services</h1>
+        <p data-i18n="onboarding.step1Body">Select the services OpsPulse should watch. You can add more later.</p>
+      </div>
+      <div class="steps" id="wizard-steps" data-od-id="wizard-steps"></div>
+
+      <!-- step 1 -->
+      <div class="grid" id="wizard-step-1">
+        <section class="widget col-7" data-od-id="wizard-services">
+          <div class="widget-head"><h2 data-i18n="onboarding.serviceName">Service</h2><div class="spacer"></div><span class="chip neutral" id="wizard-selected">0 selected</span></div>
+          <div class="widget-body">
+            <div class="svc-grid" id="wizard-svc-grid" data-od-id="wizard-service-grid"></div>
+          </div>
+        </section>
+        <section class="widget col-5" data-od-id="wizard-side">
+          <div class="widget-head"><h2 data-i18n="onboarding.previewTitle">Dashboard preview</h2></div>
+          <div class="widget-body">
+            <p class="hint" style="margin-bottom:12px" data-i18n="onboarding.previewBody">This is how your dashboard will look once the services are connected.</p>
+            <div class="mini-dash" id="wizard-preview" data-od-id="wizard-preview"></div>
+            <p class="hint" style="margin-top:12px" data-i18n="onboarding.secureNote">Keys are stored in the OpsPulse backend only. The browser never sees them.</p>
+          </div>
+        </section>
+      </div>
+
+      <!-- step 2 -->
+      <div class="grid top" id="wizard-step-2" hidden>
+        <section class="widget col-7" data-od-id="wizard-connect">
+          <div class="widget-head"><h2 data-i18n="onboarding.step2Title">Connect and authenticate</h2><span class="sub" data-i18n="onboarding.step2Body">OpsPulse talks to your services through its own backend. Credentials never reach the browser.</span></div>
+          <div class="widget-body">
+            <div id="wizard-forms"></div>
+          </div>
+        </section>
+        <section class="widget col-5" data-od-id="wizard-config">
+          <div class="widget-head"><h2>opspulse.yaml</h2></div>
+          <div class="widget-body">
+            <pre class="mono" style="margin:0;font-size:var(--fs-12);color:var(--fg-2);white-space:pre-wrap" id="wizard-yaml"></pre>
+            <p class="hint" style="margin-top:12px" data-i18n="onboarding.envHint" data-i18n-args='{"var":"${RADARR_API_KEY}"}'>The key can also come from the environment and is never stored in the config file.</p>
+          </div>
+        </section>
+      </div>
+
+      <!-- step 3 -->
+      <div class="grid top" id="wizard-step-3" hidden>
+        <section class="widget col-5" data-od-id="wizard-done">
+          <div class="widget-head"><h2 data-i18n="onboarding.step3Title">Ready</h2></div>
+          <div class="widget-body">
+            <p class="hint" style="margin-bottom:14px" data-i18n="onboarding.step3Body">Your dashboard is live. Widgets can be rearranged at any time.</p>
+            <ul class="conn-summary" id="wizard-summary"></ul>
+            <div class="row" style="margin-top:18px">
+              <button class="btn btn-primary" data-i18n="onboarding.finish">Open the dashboard</button>
+              <button class="btn btn-ghost" data-i18n="onboarding.skip">Skip for now</button>
+            </div>
+          </div>
+        </section>
+        <section class="widget col-7" data-od-id="wizard-done-preview">
+          <div class="widget-head"><h2 data-i18n="onboarding.previewTitle">Dashboard preview</h2></div>
+          <div class="widget-body"><div class="mini-dash" id="wizard-preview-done"></div></div>
+        </section>
+      </div>
+
+      <div class="row" style="margin-top:24px" id="wizard-actions">
+        <button class="btn btn-ghost" id="wizard-back" data-i18n="onboarding.back">Back</button>
+        <div class="spacer"></div>
+        <button class="btn btn-primary" id="wizard-next" data-i18n="onboarding.next">Continue</button>
+      </div>
+    </section>
+
+    <!-- ══════════ SETTINGS ══════════ -->
+    <section class="view" id="view-settings" hidden data-od-id="settings-view">
+      <div class="view-head">
+        <h1 data-i18n="settings.title">Settings</h1>
+        <p data-i18n="settings.connectorsBody">Every service OpsPulse polls, with its last successful sync.</p>
+      </div>
+      <div class="tabs-line" id="settings-tabs" data-od-id="settings-tabs">
+        <button data-tab="connectors" aria-current="true" data-i18n="settings.connectors">Connectors</button>
+        <button data-tab="interface" aria-current="false" data-i18n="settings.interface">Interface</button>
+        <button data-tab="layout" aria-current="false" data-i18n="settings.layout">Widgets</button>
+      </div>
+
+      <div id="settings-connectors" class="settings-panel" data-od-id="settings-connectors">
+        <section class="widget">
+          <div class="widget-head"><h2 data-i18n="settings.connectors">Connectors</h2><div class="spacer"></div><span class="chip neutral num" id="settings-connector-count"></span></div>
+          <div class="widget-body flush"><div id="settings-connector-list"></div></div>
+        </section>
+      </div>
+
+      <div id="settings-interface" class="settings-panel" data-od-id="settings-interface">
+        <section class="widget">
+          <div class="widget-head"><h2 data-i18n="settings.interface">Interface</h2><span class="sub" data-i18n="settings.interfaceBody">Applies to this browser and is stored in your profile.</span></div>
+          <div class="widget-body">
+            <div class="set-row">
+              <div class="grow"><div class="t" data-i18n="settings.theme">Theme</div><div class="d" data-i18n="settings.themeBody">Dark is the default — OpsPulse runs in dark rooms.</div></div>
+              <div class="radio-row">
+                <label><input type="radio" name="set-theme" value="dark" checked /> <span data-i18n="topbar.themeDark">Dark</span></label>
+                <label><input type="radio" name="set-theme" value="light" /> <span data-i18n="topbar.themeLight">Light</span></label>
+                <label><input type="radio" name="set-theme" value="system" /> <span data-i18n="topbar.themeSystem">System</span></label>
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="grow"><div class="t" data-i18n="settings.language">Language</div><div class="d" data-i18n="settings.languageBody">Applies to the interface, not to the data.</div></div>
+              <div class="radio-row">
+                <label><input type="radio" name="set-lang" value="da" /> Dansk</label>
+                <label><input type="radio" name="set-lang" value="en" checked /> English</label>
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="grow"><div class="t" data-i18n="settings.density">Density</div><div class="d" data-i18n="settings.densityBody">Compact reduces row height and padding across every table and list.</div></div>
+              <div class="radio-row">
+                <label><input type="radio" name="set-density" value="comfortable" checked /> <span data-i18n="topbar.densityComfortable">Comfortable</span></label>
+                <label><input type="radio" name="set-density" value="compact" /> <span data-i18n="topbar.densityCompact">Compact</span></label>
+              </div>
+            </div>
+            <div class="set-row">
+              <div class="grow"><div class="t" data-i18n="settings.keyStorage">Key storage</div><div class="d" data-i18n="onboarding.secureNote">Keys are stored in the OpsPulse backend only. The browser never sees them.</div></div>
+              <span class="chip neutral mono">••••••••a1f3</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div id="settings-layout" class="settings-panel" data-od-id="settings-layout">
+        <section class="widget">
+          <div class="widget-head"><h2 data-i18n="settings.layout">Widgets</h2><span class="sub" data-i18n="settings.layoutBody">Drag a widget to change its position on the dashboard.</span><div class="spacer"></div><button class="btn btn-ghost" data-i18n="settings.resetLayout">Reset layout</button></div>
+          <div class="widget-body">
+            <div class="layout-grid" id="layout-grid" data-od-id="layout-grid"></div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- ══════════ EMPTY STATES ══════════ -->
+    <section class="view" id="view-empty" hidden data-od-id="empty-view">
+      <div class="view-head"><h1 data-i18n="empty.title">Empty states</h1><p data-i18n="empty.sub">Every zero-state OpsPulse can reach, including a lost backend connection.</p></div>
+      <div class="empty-grid">
+        <section class="empty-panel" data-od-id="empty-no-services">
+          <div class="panel-head"><span class="label" data-i18n="empty.tagNoServices">no services configured</span></div>
+          <div class="empty">
+            <div class="art" aria-hidden="true">
+              <svg viewBox="0 0 120 60" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+                <rect x="14" y="16" width="34" height="28" rx="4"/><rect x="72" y="16" width="34" height="28" rx="4"/>
+                <path d="M48 30h24" stroke-dasharray="3 4"/>
+                <path d="M24 26h14M24 34h9M82 26h14M82 34h9"/>
+              </svg>
+            </div>
+            <h3 data-i18n="empty.noServicesTitle">No services configured</h3>
+            <p data-i18n="empty.noServicesBody">OpsPulse has nothing to monitor yet. Add your first service to see live activity.</p>
+            <button class="btn btn-primary" data-nav="onboarding" data-i18n="empty.noServicesCta">Add a service</button>
+          </div>
+        </section>
+
+        <section class="empty-panel" data-od-id="empty-no-streams">
+          <div class="panel-head"><span class="label" data-i18n="empty.tagNoStreams">no active streams</span></div>
+          <div class="empty">
+            <div class="art" aria-hidden="true">
+              <svg viewBox="0 0 120 60" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="30" y="12" width="60" height="36" rx="4"/><path d="M50 24l22 6-22 6z"/>
+                <path d="M14 30h10M96 30h10" stroke-dasharray="3 5"/>
+              </svg>
+            </div>
+            <h3 data-i18n="empty.noStreamsTitle">No active streams</h3>
+            <p data-i18n="empty.noStreamsBody">Nobody is watching right now. Active Plex streams appear here the moment they start.</p>
+          </div>
+        </section>
+
+        <section class="empty-panel" data-od-id="empty-no-errors">
+          <div class="panel-head"><span class="label" data-i18n="empty.tagNoErrors">no errors</span></div>
+          <div class="empty">
+            <div class="art" aria-hidden="true">
+              <svg viewBox="0 0 120 60" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="60" cy="30" r="18"/><path d="M51 30l6 6 12-13"/>
+              </svg>
+            </div>
+            <h3 data-i18n="empty.noErrorsTitle">No errors</h3>
+            <p data-i18n="empty.noErrorsBody">Every service reported healthy in the last 24 hours.</p>
+          </div>
+        </section>
+
+        <section class="empty-panel" data-od-id="empty-connection-lost">
+          <div class="panel-head"><span class="label" data-i18n="empty.tagLost">connection lost</span></div>
+          <div class="empty">
+            <div class="art" aria-hidden="true" style="color:var(--warn)">
+              <svg viewBox="0 0 120 60" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M60 16 20 46h80L60 16Z"/><path d="M60 28v10"/><path d="M60 43h.01"/>
+              </svg>
+            </div>
+            <h3 data-i18n="empty.lostTitle">Connection lost</h3>
+            <p data-i18n="empty.lostBody">OpsPulse cannot reach its backend. The data below is the last known state and is no longer live.</p>
+            <button class="btn" data-i18n="empty.lostRetry">Try again</button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <!-- ══════════ MOBILE ══════════ -->
+    <section class="view" id="view-mobile" hidden data-od-id="mobile-view">
+      <div class="view-head"><h1 data-i18n="mobile.title">Mobile</h1><p data-i18n="mobile.sub">At 720px and below the widgets stack in one column, the queue table drops its secondary columns, and the queue is presented as a card list with expandable rows.</p></div>
+      <div class="mobile-wrap">
+        <figure class="phone-fig" data-od-id="phone-dashboard-fig">
+          <div class="phone" data-od-id="phone-dashboard">
+            <div class="phone-bar">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2 12h4l3-7 4 14 3-7h6"/></svg>
+              <span class="ttl">OpsPulse</span>
+              <div class="spacer"></div>
+              <span class="dot live" style="color:var(--ok)"></span>
+            </div>
+            <div class="phone-body" id="phone-body"></div>
+            <div class="phone-tabs" id="phone-tabs"></div>
+          </div>
+          <figcaption data-i18n="mobile.capDashboard">Dashboard — KPI strip, then feed and streams stacked one column</figcaption>
+        </figure>
+
+        <figure class="phone-fig" data-od-id="phone-queue-fig">
+          <div class="phone" data-od-id="phone-queue">
+            <div class="phone-bar">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2 12h4l3-7 4 14 3-7h6"/></svg>
+              <span class="ttl">OpsPulse</span>
+              <div class="spacer"></div>
+              <span class="chip neutral mono" style="font-size:10px" data-i18n="mobile.queuePaused">31 paused</span>
+            </div>
+            <div class="phone-body" id="phone-queue-body"></div>
+            <div class="phone-tabs" id="phone-tabs-2"></div>
+          </div>
+          <figcaption data-i18n="mobile.capQueue">Queue — table becomes a card list; a row expands in place to reveal progress and actions</figcaption>
+        </figure>
+
+        <aside class="mobile-notes" data-od-id="mobile-breakpoint-rules">
+          <h3 data-i18n="mobile.rulesTitle">Breakpoint rules</h3>
+          <dl class="rules-list">
+            <div><dt data-i18n="mobile.rule1t">≤ 720px</dt><dd data-i18n="mobile.rule1d">One column. Feed, streams, queue and health stack in that order — the queue stays the last full-width block.</dd></div>
+            <div><dt data-i18n="mobile.rule2t">Queue columns</dt><dd data-i18n="mobile.rule2d">Service badge, title and status survive. Quality, progress column and ETA move into the expanded row.</dd></div>
+            <div><dt data-i18n="mobile.rule3t">Row height</dt><dd data-i18n="mobile.rule3d">Collapsed cards are 64px tall so eight rows fit on a 667px viewport. Expanded rows grow to fit; the list never scrolls sideways.</dd></div>
+            <div><dt data-i18n="mobile.rule4t">Touch targets</dt><dd data-i18n="mobile.rule4d">Every control is at least 44×44px. The chevron is the only affordance on a collapsed card.</dd></div>
+            <div><dt data-i18n="mobile.rule5t">Bottom navigation</dt><dd data-i18n="mobile.rule5d">Five fixed destinations, always visible. The queue badge carries the paused count so the user can judge load without opening it.</dd></div>
+          </dl>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ══════════ SPEC ══════════ -->
+    <section class="view" id="view-states" hidden data-od-id="states-view">
+      <div class="page-head">
+        <div>
+          <h1 data-i18n="states.title">Queue action states</h1>
+          <p data-i18n="states.sub">The four states every queue action passes through, rendered side by side so the handoff is unambiguous.</p>
+        </div>
+      </div>
+      <div class="grid">
+        <section class="widget col-12" data-od-id="states-table">
+          <div class="widget-head">
+            <h2 data-i18n="states.tableTitle">Action states on a queue row</h2>
+            <span class="chip neutral" data-i18n="states.footnote">One markup, four states</span>
+          </div>
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead><tr>
+                <th data-i18n="queue.colService">Service</th>
+                <th data-i18n="queue.colTitle">Title</th>
+                <th data-i18n="queue.colQuality">Quality</th>
+                <th data-i18n="queue.colProgress">Progress</th>
+                <th data-i18n="queue.colEta">ETA</th>
+                <th data-i18n="queue.colStatus">Status</th>
+                <th data-i18n="states.colActionState">Action state</th>
+                <th data-i18n="queue.colActions">Actions</th>
+              </tr></thead>
+              <tbody id="states-body"></tbody>
+            </table>
+          </div>
+          <div class="state-legend" id="states-legend"></div>
+        </section>
+
+        <section class="widget col-6" data-od-id="states-toasts">
+          <div class="widget-head"><h2 data-i18n="states.toastTitle">Toasts</h2></div>
+          <div class="toast-stack" id="states-toasts-body"></div>
+        </section>
+
+        <section class="widget col-6" data-od-id="states-stale">
+          <div class="widget-head"><h2 data-i18n="states.staleTitle">Stale connection</h2></div>
+          <div class="stale-demo">
+            <div class="banner" role="status">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+              <div class="btext"><span data-i18n="stale.banner">Reconnecting to the OpsPulse backend…</span></div>
+            </div>
+            <div class="stale-fade">
+              <div class="kpi-strip" style="grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--sp-2)">
+                <div class="kpi" style="padding:10px 12px"><div class="kpi-label" data-i18n="kpi.downloads">Downloads today</div><div class="kpi-value num" style="font-size:22px">12</div></div>
+                <div class="kpi" style="padding:10px 12px"><div class="kpi-label" data-i18n="kpi.activeStreams">Active streams</div><div class="kpi-value num" style="font-size:22px">3</div></div>
+              </div>
+            </div>
+            <p class="hint" data-i18n="states.staleBody">The banner is discreet, the data greys out, and actions are disabled until the socket is back. Nothing is deleted — the last known values stay on screen and resume from there.</p>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="view" id="view-spec" hidden data-od-id="spec-view">
+      <div class="view-head"><h1 data-i18n="states.specTitle">Tokens &amp; spec</h1><p data-i18n="states.specSub">The values below are bound to tokens.css — change the token, not the component.</p></div>
+      <div class="stack">
+        <div class="grid">
+          <section class="widget col-12">
+            <div class="widget-head"><h2 data-i18n="states.specStatus">Status palette</h2><span class="sub" data-i18n="states.specStatusSub">Functional only — never decorative</span></div>
+            <div class="widget-body">
+              <div class="spec-grid" id="spec-status"></div>
+            </div>
+          </section>
+
+        <section class="widget col-12" data-od-id="states-density">
+          <div class="widget-head">
+            <h2 data-i18n="states.densityTitle">Density in use</h2>
+            <span class="chip neutral" data-i18n="states.densitySub">Same markup, two densities</span>
+          </div>
+          <div class="density-compare">
+            <div class="density-pane" data-density="comfortable">
+              <div class="density-label"><span data-i18n="states.densityComfortable">Comfortable</span><span class="mono" data-i18n="states.densityComfortableMeta">row 44px · cell 11/14</span></div>
+              <div class="tbl-wrap"><table class="tbl"><tbody id="density-q-comfortable"></tbody></table></div>
+              <ul class="feed" id="density-f-comfortable"></ul>
+            </div>
+            <div class="density-pane" data-density="compact">
+              <div class="density-label"><span data-i18n="states.densityCompact">Compact</span><span class="mono" data-i18n="states.densityCompactMeta">row 32px · cell 5/10</span></div>
+              <div class="tbl-wrap"><table class="tbl"><tbody id="density-q-compact"></tbody></table></div>
+              <ul class="feed" id="density-f-compact"></ul>
+            </div>
+          </div>
+          <p class="hint" data-i18n="states.densityBody">Density is a single attribute on the root element. Every table cell, feed row and widget picks up the new row height, padding and type size — no component variant is written for it.</p>
+        </section>
+          <section class="widget col-12">
+            <div class="widget-head"><h2 data-i18n="states.specViz">Data visualisation</h2><span class="sub" data-i18n="states.specVizSub">Sequential ramp (7) + categorical (6)</span></div>
+            <div class="widget-body">
+              <div class="spec-grid" id="spec-viz"></div>
+            </div>
+          </section>
+          <section class="widget col-12">
+            <div class="widget-head"><h2 data-i18n="states.specBase">Base surfaces</h2><span class="sub" data-i18n="states.specBaseSub">Canvas, panels and text</span></div>
+            <div class="widget-body">
+              <div class="spec-grid" id="spec-base"></div>
+            </div>
+          </section>
+          <section class="widget col-12">
+            <div class="widget-head"><h2 data-i18n="states.specType">Typography</h2><span class="sub" data-i18n="states.specTypeSub">IBM Plex Sans for UI · IBM Plex Mono for numbers</span></div>
+            <div class="widget-body">
+              <div class="spec-grid" id="spec-type" style="grid-template-columns:repeat(2,minmax(0,1fr))"></div>
+            </div>
+          </section>
+          <section class="widget col-12">
+            <div class="widget-head"><h2 data-i18n="states.specSpace">Spacing</h2><span class="sub" data-i18n="states.specSpaceSub">4px base scale</span></div>
+            <div class="widget-body">
+              <div class="spec-grid" id="spec-space" style="grid-template-columns:repeat(4,minmax(0,1fr))"></div>
+            </div>
+          </section>
+          <section class="widget col-12">
+            <div class="widget-head"><h2 data-i18n="states.specRadius">Radius</h2><span class="sub" data-i18n="states.specRadiusSub">Corner rounding</span></div>
+            <div class="widget-body">
+              <div class="spec-grid" id="spec-radius" style="grid-template-columns:repeat(5,minmax(0,1fr))"></div>
+            </div>
+          </section>
+          <section class="widget col-12">
+            <div class="widget-head"><h2 data-i18n="states.specShadow">Shadows</h2><span class="sub" data-i18n="states.specShadowSub">Elevation, dark theme</span></div>
+            <div class="widget-body">
+              <div class="spec-grid" id="spec-shadow" style="grid-template-columns:repeat(4,minmax(0,1fr))"></div>
+            </div>
+          </section>
+          <section class="widget col-12">
+            <div class="widget-head"><h2 data-i18n="states.specDensity">Density</h2></div>
+            <div class="widget-body"><div class="spec-grid" id="spec-density" style="grid-template-columns:repeat(2,minmax(0,1fr));max-width:520px"></div></div>
+          </section>
+          <section class="widget col-12">
+            <div class="widget-head"><h2 data-i18n="states.specMotion">Motion</h2></div>
+            <div class="widget-body flush"><ul id="spec-motion" style="font-size:var(--fs-13)"></ul></div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toast-host" id="toast-host" data-od-id="toast-host"></div>
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   OpsPulse design reference — behaviour
+   Copy strings come from copy.en.json / copy.da.json (embedded verbatim so
+   the file opens directly from disk). tokens.css owns every visual value.
+   ══════════════════════════════════════════════════════════════════════════ */
+const COPY = {"en": {"app": {"name": "OpsPulse", "tagline": "Real-time operations for self-hosted media servers", "demoBadge": "Demo data", "demoTooltip": "Mocked connectors — no request has left this machine", "footNote": "Media artwork: Wikipedia (poster art, non-free use for this mock). Service marks are the projects' own logos."}, "nav": {"dashboard": "Dashboard", "history": "History", "onboarding": "Add services", "settings": "Settings", "viewSwitcher": "Reference views", "spec": "Tokens & spec", "states": "States", "refDashboard": "Dashboard", "refStale": "Stale connection", "refHistory": "History / drilldown", "refOnboarding": "Onboarding", "refSettings": "Settings", "refEmpty": "Empty states", "refMobile": "Mobile", "refSpec": "Tokens & spec", "refNote": "OpsPulse · design reference", "refStates": "States"}, "topbar": {"connected": "Live", "connecting": "Connecting…", "reconnecting": "Reconnecting…", "disconnected": "Connection lost", "searchPlaceholder": "Search events, titles, services", "theme": "Theme", "themeDark": "Dark", "themeLight": "Light", "themeSystem": "System", "language": "Language", "density": "Density", "densityComfortable": "Comfortable", "densityCompact": "Compact", "lastSync": "Last sync {time}", "openMenu": "Open menu"}, "kpi": {"title": "Today", "downloads": "Downloads today", "downloadsDelta": "{n} more than yesterday", "activeStreams": "Active streams", "activeStreamsDelta": "{n} transcoding", "queueSize": "Items in queue", "queueSizeDelta": "{n} paused", "diskTemp": "Disk temperature", "diskTempDelta": "Peak {n}° today", "errors": "Errors", "errorsDelta": "None in the last hour", "drilldown": "Open history for this metric"}, "feed": {"title": "Activity", "subtitle": "Events from every connected service", "allServices": "All services", "empty": "No events yet", "emptyHint": "Events appear the moment a service reports one.", "newBadge": "New", "showMore": "Show more", "actions": {"downloadStarted": "Download started", "downloadFinished": "Download finished", "importFinished": "Import finished", "mediaAdded": "Added to library", "unpackFailed": "Unpack failed", "grabFailed": "Grab failed", "healthFailed": "Health check failed", "updateInstalled": "Update installed"}}, "queue": {"title": "Queue", "subtitle": "Unified across Radarr and Sonarr", "searchPlaceholder": "Filter by title", "filterAll": "All", "filterDownloading": "Downloading", "filterSeeding": "Seeding", "filterPaused": "Paused", "filterFailed": "Failed", "colService": "Service", "colTitle": "Title", "colQuality": "Quality", "colProgress": "Progress", "colEta": "ETA", "colStatus": "Status", "colActions": "Actions", "statusDownloading": "Downloading", "statusSeeding": "Seeding", "statusPaused": "Paused", "statusFailed": "Failed", "actionPause": "Pause", "actionResume": "Resume", "actionRemove": "Remove", "actionRetry": "Retry", "stateIdle": "Idle", "statePending": "Pending", "stateSuccess": "Confirmed", "stateError": "Rolled back", "statePendingHint": "Waiting for the service to confirm", "stateErrorHint": "The service rejected the change — the row was restored", "rowCount": "{shown} of {total} items", "virtualised": "Virtualised — {n} rows in the DOM", "staleTitle": "Reconnecting to the OpsPulse backend", "staleBody": "Showing the last known values. Live progress and events resume automatically.", "empty": "Queue is empty", "emptyHint": "Everything you asked for has been downloaded and imported.", "searchNoResult": "No item matches “{query}”", "clearFilters": "Clear filters"}, "streams": {"title": "Active streams", "subtitle": "Live from Plex", "empty": "No active streams", "emptyHint": "Nobody is watching right now.", "directPlay": "Direct Play", "transcode": "Transcode", "transcodeHint": "The client cannot play this file directly, so Plex is converting it.", "user": "User", "titleLabel": "Title", "device": "Device", "bitrate": "Bitrate", "cpu": "CPU", "cpuLabel": "Transcoder load", "bandwidth": "Bandwidth", "started": "Started {time}"}, "disk": {"title": "Disk health", "subtitle": "Temperature and SMART status", "device": "Media", "temp": "Temperature", "smart": "SMART", "smartOk": "Passed", "smartWarning": "Warning", "smartFailed": "Failed", "tempOk": "Within range", "tempWarning": "Above target", "tempCritical": "Critical", "thresholdNote": "Green below 40° · yellow 40–50° · red above 50°", "uptime": "Uptime", "range": "Range"}, "containers": {"title": "Containers", "subtitle": "Docker on the OpsPulse host", "up": "Up", "down": "Down", "restarting": "Restarting", "uptime": "up {time}", "downSince": "down {time}", "searchPlaceholder": "Filter containers"}, "errors": {"title": "Errors", "subtitle": "Collected from every service", "severityError": "Error", "severityWarning": "Warning", "severityInfo": "Info", "empty": "No errors", "emptyHint": "Every service reported healthy in the last 24 hours.", "count": "{n} errors in the last 24 hours"}, "history": {"title": "History", "subtitle": "Drill into any metric", "metricDownloads": "Downloads", "metricStreams": "Concurrent streams", "metricErrors": "Errors", "rangeHour": "Hour", "rangeDay": "Day", "rangeWeek": "Week", "legendDownloads": "Downloads", "legendErrors": "Errors", "peak": "Peak {n}", "total": "Total {n}", "average": "Average {n}", "back": "Back to dashboard", "windowHours": "Last 12 hours", "windowDay": "Last 24 hours", "windowWeek": "Last 7 days", "peakPer": "Peak per bucket", "totalIn": "Total in range", "avgPer": "Average per bucket"}, "onboarding": {"step": "Step {n} of {total}", "step1Title": "Pick your services", "step1Body": "Select the services OpsPulse should watch. You can add more later.", "step2Title": "Connect and authenticate", "step2Body": "OpsPulse talks to your services through its own backend. The key is sent once, over HTTPS, and never persisted in the browser.", "step3Title": "Ready", "step3Body": "Your dashboard is live. Widgets can be rearranged at any time.", "serviceName": "Service", "serviceType": "Type", "url": "URL", "urlPlaceholder": "http://localhost:7878", "apiKey": "API key", "apiKeyPlaceholder": "Paste the key from the service settings", "token": "Token", "tokenPlaceholder": "Paste the Plex token", "testConnection": "Test connection", "testing": "Testing…", "testOk": "Connection succeeded", "testFail": "Could not reach the service", "testFailBody": "Check the URL, the port and that the service is running.", "next": "Continue", "back": "Back", "finish": "Open the dashboard", "skip": "Skip for now", "selected": "{n} selected", "envHint": "The key can also come from the environment as {var} and is never stored in the config file.", "previewTitle": "Dashboard preview", "previewBody": "This is how your dashboard will look once the services are connected.", "secureNote": "Keys are stored in the OpsPulse backend only. Nothing is written to browser storage.", "maskedNote": "Masked", "keyHint": "Sent once to the OpsPulse backend over HTTPS. It is never stored in the browser and never written to the config file.", "previewOverview": "Overview"}, "settings": {"title": "Settings", "connectors": "Connectors", "connectorsBody": "Every service OpsPulse polls, with its last successful sync.", "interface": "Interface", "interfaceBody": "Applies to this browser and is stored in your profile.", "layout": "Widgets", "layoutBody": "Drag a widget to change its position on the dashboard.", "edit": "Edit", "delete": "Remove", "test": "Test", "testOk": "Reachable", "testFail": "Unreachable", "maskedKey": "••••••••{last4}", "noKey": "No key stored", "lastSync": "Synced {time}", "neverSynced": "Never synced", "theme": "Theme", "language": "Language", "density": "Density", "densityBody": "Compact reduces row height and padding across every table and list.", "resetLayout": "Reset layout", "saved": "Saved", "dangerZone": "Remove connector", "dangerBody": "OpsPulse stops polling this service. The service itself is not changed.", "confirmRemove": "Remove {name}?", "confirmRemoveBody": "This only removes the connector from OpsPulse.", "cancel": "Cancel", "confirm": "Remove", "settings.themeBody": "Dark is the default — OpsPulse runs in dark rooms.", "settings.languageBody": "Applies to the interface, not to the data.", "settings.keyStorage": "Key storage", "themeBody": "Dark is the default — OpsPulse runs in dark rooms.", "languageBody": "Applies to the interface, not to the data.", "keyStorage": "Key storage", "testAction": "Test", "noEndpoint": "No web endpoint", "dragHint": "Drag to reposition", "colService": "Service", "colEndpoint": "Endpoint", "colKey": "Key", "colSync": "Last sync", "colStatus": "Status", "colActions": "Actions", "notWebService": "No web UI"}, "empty": {"noServicesTitle": "No services configured", "noServicesBody": "OpsPulse has nothing to monitor yet. Add your first service to see live activity.", "noServicesCta": "Add a service", "noStreamsTitle": "No active streams", "noStreamsBody": "Nobody is watching right now. Active Plex streams appear here the moment they start.", "noErrorsTitle": "No errors", "noErrorsBody": "Every service reported healthy in the last 24 hours.", "lostTitle": "Connection lost", "lostBody": "OpsPulse cannot reach its backend. The data below is the last known state and is no longer live.", "lostRetry": "Try again", "retrying": "Reconnecting…", "title": "Empty states", "sub": "Every zero-state OpsPulse can reach, including a lost backend connection.", "tagNoServices": "no services configured", "tagNoStreams": "no active streams", "tagNoErrors": "no errors", "tagLost": "connection lost"}, "toast": {"paused": "“{title}” paused", "resumed": "“{title}” resumed", "removed": "“{title}” removed from the queue", "actionFailed": "The service rejected that change", "actionFailedBody": "“{title}” was restored to its previous state.", "dismiss": "Dismiss", "pausedBody": "“{title}” is paused in Radarr.", "removedBody": "“{title}” was removed from the queue."}, "mobile": {"queueTitle": "Queue", "expand": "Expand row", "collapse": "Collapse row", "tabDashboard": "Dashboard", "tabActivity": "Activity", "tabQueue": "Queue", "tabStreams": "Streams", "tabSettings": "Settings", "title": "Mobile", "sub": "At 720px and below the widgets stack in one column, the queue table drops its secondary columns, and the queue is presented as a card list with expandable rows.", "capDashboard": "Dashboard — KPI strip, then feed and streams stacked one column", "capQueue": "Queue — table becomes a card list; a row expands in place to reveal progress and actions", "rulesTitle": "Breakpoint rules", "rule1t": "≤ 720px", "rule1d": "One column. Feed, streams, queue and health stack in that order — the queue stays the last full-width block.", "rule2t": "Queue columns", "rule2d": "Service badge, title, quality and status survive on the collapsed card. The progress column and ETA move into the expanded row.", "rule3t": "Row height", "rule3d": "Collapsed cards are 64px tall so eight rows fit on a 667px viewport. Expanded rows grow to fit; the list never scrolls sideways.", "rule4t": "Touch targets", "rule4d": "Every control is at least 44×44px. The chevron is the only affordance on a collapsed card.", "rule5t": "Bottom navigation", "rule5d": "Five fixed destinations, always visible. The queue badge carries the paused count so the user can judge load without opening it.", "queuePaused": "31 paused"}, "stale": {"banner": "Reconnecting to the OpsPulse backend…"}, "states": {"title": "Queue action states", "sub": "The four states every queue action passes through, rendered side by side so the handoff is unambiguous.", "tableTitle": "Action states on a queue row", "footnote": "One markup, four states", "toastTitle": "Toasts", "staleTitle": "Stale connection", "staleBody": "The banner is discreet, the data greys out, and actions are disabled until the socket is back. Nothing is deleted — the last known values stay on screen and resume from there.", "legendIdle": "Nothing in flight. The row shows the server state.", "legendPending": "The change is sent. The row is tinted and the action shows a spinner.", "legendSuccess": "The server confirmed. The row settles once, then returns to idle.", "legendError": "The server rejected the change. The row reverts and a toast explains why.", "specTitle": "Tokens & spec", "specSub": "The values below are bound to tokens.css — change the token, not the component.", "specStatus": "Status palette", "specStatusSub": "Functional only — never decorative", "specViz": "Data visualisation", "specVizSub": "Sequential ramp (7) + categorical (6)", "specDensity": "Density", "specMotion": "Motion", "specBase": "Base surfaces", "specBaseSub": "Canvas, panels and text", "specType": "Typography", "specTypeSub": "IBM Plex Sans for UI · IBM Plex Mono for numbers", "specSpace": "Spacing", "specSpaceSub": "4px base scale", "specRadius": "Radius", "specRadiusSub": "Corner rounding", "specShadow": "Shadows", "specShadowSub": "Elevation, dark theme", "densityTitle": "Density in use", "densitySub": "Same markup, two densities", "densityComfortable": "Comfortable", "densityComfortableMeta": "row 44px · cell 11/14", "densityCompact": "Compact", "densityCompactMeta": "row 32px · cell 5/10", "densityBody": "Density is a single attribute on the root element. Every table cell, feed row and widget picks up the new row height, padding and type size — no component variant is written for it.", "colActionState": "Action state"}, "time": {"agoMin": "{n} min ago", "agoSec": "{n}s ago", "durMin": "{n} min", "durSec": "{n}s", "durDayHour": "{d}d {h}h", "durHourMin": "{h}h {m}m", "durDay": "{d}d"}, "svcType": {"movies": "Movies", "series": "Series", "mediaServer": "Media server", "analytics": "Analytics", "requests": "Requests", "indexers": "Indexers", "diskHealth": "Disk health", "libraryCleanup": "Library cleanup", "unpack": "Unpack", "collections": "Collections", "containers": "Containers", "updates": "Updates", "proxy": "Proxy"}, "feedItems": {"ripleyDownloaded": "{title} · download finished", "kpopImported": "{title} · imported", "avatarUnpackFailed": "{title} · unpack failed", "duneAdded": "{title} · added to {lib}", "fantasticStarted": "{title} · started", "weaponsGrabFailed": "{title} · grab failed (indexer timeout)", "season2Archived": "{title} archived · {n} files removed", "smartReallocated": "SMART attribute {n} reallocated on {dev}"}, "errorItems": {"unpackFailed": "Unpack failed · {title}", "grabFailed": "Grab failed · {title} (indexer timeout)", "smartWarning": "SMART attribute {n} reallocated sectors", "containerStopped": "Container stopped during image update"}}, "da": {"app": {"name": "OpsPulse", "tagline": "Realtidsoversigt for selvhostede medieservere", "demoBadge": "Demodata", "demoTooltip": "Mockede connectors — ingen forespørgsel har forladt denne maskine", "footNote": "Mediebilleder: Wikipedia (plakater, ikke-kommerciel brug i denne mockup). Tjenestemærkerne er projekternes egne logoer."}, "nav": {"dashboard": "Overblik", "history": "Historik", "onboarding": "Tilføj tjenester", "settings": "Indstillinger", "viewSwitcher": "Referensvisninger", "spec": "Tokens & spec", "states": "Tilstande", "refDashboard": "Overblik", "refStale": "Tabt forbindelse", "refHistory": "Historik / nedbrud", "refOnboarding": "Opsætning", "refSettings": "Indstillinger", "refEmpty": "Tomme tilstande", "refMobile": "Mobil", "refSpec": "Tokens & spec", "refNote": "OpsPulse · designreference", "refStates": "Tilstande"}, "topbar": {"connected": "Live", "connecting": "Forbinder…", "reconnecting": "Forbinder igen…", "disconnected": "Forbindelsen er tabt", "searchPlaceholder": "Søg i hændelser, titler, tjenester", "theme": "Tema", "themeDark": "Mørk", "themeLight": "Lys", "themeSystem": "System", "language": "Sprog", "density": "Tæthed", "densityComfortable": "Behagelig", "densityCompact": "Kompakt", "lastSync": "Seneste sync {time}", "openMenu": "Åbn menu"}, "kpi": {"title": "I dag", "downloads": "Download i dag", "downloadsDelta": "{n} mere end i går", "activeStreams": "Aktive streams", "activeStreamsDelta": "{n} transkodning", "queueSize": "Elementer i køen", "queueSizeDelta": "{n} på pause", "diskTemp": "Disk-temperatur", "diskTempDelta": "Højeste {n}° i dag", "errors": "Fejl", "errorsDelta": "Ingen i den sidste time", "drilldown": "Åbn historik for denne måling"}, "feed": {"title": "Aktivitet", "subtitle": "Hændelser fra alle tilsluttede tjenester", "allServices": "Alle tjenester", "empty": "Ingen hændelser endnu", "emptyHint": "Hændelser vises, så snart en tjeneste melder ind.", "newBadge": "Ny", "showMore": "Vis flere", "actions": {"downloadStarted": "Download startet", "downloadFinished": "Download fuldført", "importFinished": "Import fuldført", "mediaAdded": "Tilføjet til biblioteket", "unpackFailed": "Udpakning mislykkedes", "grabFailed": "Hentning mislykkedes", "healthFailed": "Health check mislykkedes", "updateInstalled": "Opdatering installeret"}}, "queue": {"title": "Kø", "subtitle": "Samlet tværs over Radarr og Sonarr", "searchPlaceholder": "Filtrer efter titel", "filterAll": "Alle", "filterDownloading": "Downloader", "filterSeeding": "Seeder", "filterPaused": "Pauset", "filterFailed": "Fejlede", "colService": "Tjeneste", "colTitle": "Titel", "colQuality": "Kvalitet", "colProgress": "Fremskridt", "colEta": "ETA", "colStatus": "Status", "colActions": "Handlinger", "statusDownloading": "Downloader", "statusSeeding": "Seeder", "statusPaused": "Pauset", "statusFailed": "Fejlet", "actionPause": "Pause", "actionResume": "Fortsæt", "actionRemove": "Fjern", "actionRetry": "Prøv igen", "stateIdle": "Ledig", "statePending": "Afventer", "stateSuccess": "Bekræftet", "stateError": "Rullet tilbage", "statePendingHint": "Venter på tjenestens bekræftelse", "stateErrorHint": "Tjenesten afviste ændringen — rækken blev gendannet", "rowCount": "{shown} af {total} elementer", "virtualised": "Virtualiseret — {n} rækker i DOM'en", "staleTitle": "Forbinder igen til OpsPulse-backend", "staleBody": "Viser de senest kendte værdier. Live-fremdrift og hændelser genoptages automatisk.", "empty": "Køen er tom", "emptyHint": "Alt, du har bedt om, er downloadet og importeret.", "searchNoResult": "Intet element matcher “{query}”", "clearFilters": "Ryd filtre"}, "streams": {"title": "Aktive streams", "subtitle": "Live fra Plex", "empty": "Ingen aktive streams", "emptyHint": "Ingen ser lige nu.", "directPlay": "Direkte afspilning", "transcode": "Transkode", "transcodeHint": "Klienten kan ikke afspille filen direkte, så Plex konverterer den.", "user": "Bruger", "titleLabel": "Titel", "device": "Enhed", "bitrate": "Bithastighed", "cpu": "CPU", "cpuLabel": "Transcoder-belastning", "bandwidth": "Båndbredde", "started": "Startet {time}"}, "disk": {"title": "Disk-helse", "subtitle": "Temperatur og SMART-status", "device": "Medie", "temp": "Temperatur", "smart": "SMART", "smartOk": "Bestået", "smartWarning": "Advarsel", "smartFailed": "Mislykkedes", "tempOk": "Inden for normalen", "tempWarning": "Over målet", "tempCritical": "Kritisk", "thresholdNote": "Grøn under 40° · gul 40–50° · rød over 50°", "uptime": "Oppetid", "range": "Område"}, "containers": {"title": "Containere", "subtitle": "Docker på OpsPulse-værten", "up": "Kører", "down": "Nede", "restarting": "Genstarter", "uptime": "op {time}", "downSince": "nede siden {time}", "searchPlaceholder": "Filtrér containere"}, "errors": {"title": "Fejl", "subtitle": "Samlet fra alle tjenester", "severityError": "Fejl", "severityWarning": "Advarsel", "severityInfo": "Info", "empty": "Ingen fejl", "emptyHint": "Alle tjenester har meldt sund i de seneste 24 timer.", "count": "{n} fejl i de seneste 24 timer"}, "history": {"title": "Historik", "subtitle": "Zoom ind på enhver måling", "metricDownloads": "Downloads", "metricStreams": "Samtidige streams", "metricErrors": "Fejl", "rangeHour": "Time", "rangeDay": "Dag", "rangeWeek": "Uge", "legendDownloads": "Downloads", "legendErrors": "Fejl", "peak": "Højeste {n}", "total": "I alt {n}", "average": "Gennemsnit {n}", "back": "Tilbage til overblikket", "windowHours": "Sidste 12 timer", "windowDay": "Sidste 24 timer", "windowWeek": "Sidste 7 dage", "peakPer": "Spids per interval", "totalIn": "I alt i intervallet", "avgPer": "Gennemsnit per interval"}, "onboarding": {"step": "Trin {n} af {total}", "step1Title": "Vælg dine tjenester", "step1Body": "Vælg de tjenester OpsPulse skal holde øje med. Du kan tilføje flere senere.", "step2Title": "Forbind og godkend", "step2Body": "OpsPulse taler med dine tjenester via sin egen backend. Nøglen sendes én gang over HTTPS og gemmes aldrig i browseren.", "step3Title": "Klar", "step3Body": "Dit overblik er live. Widgets kan flyttes rundt, når som helst.", "serviceName": "Tjeneste", "serviceType": "Type", "url": "URL", "urlPlaceholder": "http://localhost:7878", "apiKey": "API-nøgle", "apiKeyPlaceholder": "Indsæt nøglen fra tjenestens indstillinger", "token": "Token", "tokenPlaceholder": "Indsæt Plex-token", "testConnection": "Test forbindelse", "testing": "Tester…", "testOk": "Forbindelsen lykkedes", "testFail": "Tjenesten kunne ikke nås", "testFailBody": "Kontroller URL, port og at tjenesten kører.", "next": "Fortsæt", "back": "Tilbage", "finish": "Åbn overblikket", "skip": "Spring over for nu", "selected": "{n} valgt", "envHint": "Nøglen kan også komme fra miljøet som {var} og gemmes aldrig i konfigurationsfilen.", "previewTitle": "Forhåndsvisning af overblik", "previewBody": "Sådan vil dit overblik se ud, når tjenesterne er forbundet.", "secureNote": "Nøgler opbevares kun i OpsPulse-backend. Intet skrives i browserens lagring.", "maskedNote": "Maskeret", "keyHint": "Sendes én gang til OpsPulse-backend over HTTPS. Den gemmes aldrig i browseren og skrives aldrig til konfigurationsfilen.", "previewOverview": "Oversigt"}, "settings": {"title": "Indstillinger", "connectors": "Connectors", "connectorsBody": "Alle tjenester OpsPulse henter fra, med seneste vellykkede sync.", "interface": "Interface", "interfaceBody": "Gælder for denne browser og gemmes i din profil.", "layout": "Widgets", "layoutBody": "Træk en widget for at ændre dens placering på overblikket.", "edit": "Rediger", "delete": "Fjern", "test": "Test", "testOk": "Kan nås", "testFail": "Kan ikke nås", "maskedKey": "••••••••{last4}", "noKey": "Ingen nøgle gemt", "lastSync": "Synket {time}", "neverSynced": "Aldrig synket", "resetLayout": "Nulstil layout", "saved": "Gemt", "dangerZone": "Fjern connector", "dangerBody": "OpsPulse holder op med at hente fra tjenesten. Tjenesten selv ændres ikke.", "confirmRemove": "Fjern {name}?", "confirmRemoveBody": "Dette fjerner kun connectoren fra OpsPulse.", "cancel": "Annuller", "confirm": "Fjern", "theme": "Tema", "language": "Sprog", "density": "Tæthed", "densityBody": "Kompakt reducerer rækkhøjde og padding i alle tabeller og lister.", "settings.themeBody": "Mørk er standard — OpsPulse kører i mørke rum.", "settings.languageBody": "Gælder interfacet, ikke data.", "settings.keyStorage": "Nøglelagring", "themeBody": "Mørk er standard — OpsPulse kører i mørke rum.", "languageBody": "Gælder interfacet, ikke data.", "keyStorage": "Nøglelagring", "testAction": "Test", "noEndpoint": "Ingen web-endpoint", "dragHint": "Træk for at flytte", "colService": "Tjeneste", "colEndpoint": "Endpoint", "colKey": "Nøgle", "colSync": "Seneste sync", "colStatus": "Status", "colActions": "Handlinger", "notWebService": "Ingen web-UI"}, "empty": {"noServicesTitle": "Ingen tjenester konfigureret", "noServicesBody": "OpsPulse har intet at overvåge endnu. Tilføj din første tjeneste for at se live-aktivitet.", "noServicesCta": "Tilføj en tjeneste", "noStreamsTitle": "Ingen aktive streams", "noStreamsBody": "Ingen ser lige nu. Aktive Plex-streams vises her, så snart de starter.", "noErrorsTitle": "Ingen fejl", "noErrorsBody": "Alle tjenester har meldt sund i de seneste 24 timer.", "lostTitle": "Forbindelsen er tabt", "lostBody": "OpsPulse kan ikke nå sin backend. Dataet nedenfor er den seneste kendte tilstand og er ikke længere live.", "lostRetry": "Prøv igen", "retrying": "Forbinder igen…", "title": "Tomme tilstande", "sub": "Alle nulstater OpsPulse kan nå, inklusive en tabt backend-forbindelse.", "tagNoServices": "ingen tjenester konfigureret", "tagNoStreams": "ingen aktive afspilninger", "tagNoErrors": "ingen fejl", "tagLost": "forbindelsen tabt"}, "toast": {"paused": "“{title}” sat på pause", "resumed": "“{title}” fortsætter", "removed": "“{title}” fjernet fra køen", "actionFailed": "Tjenesten afviste ændringen", "actionFailedBody": "“{title}” blev gendannet i sin tidligere tilstand.", "dismiss": "Luk", "pausedBody": "“{title}” er sat på pause i Radarr.", "removedBody": "“{title}” blev fjernet fra køen."}, "mobile": {"queueTitle": "Kø", "expand": "Udvid række", "collapse": "Skjul række", "tabDashboard": "Overblik", "tabActivity": "Aktivitet", "tabQueue": "Kø", "tabStreams": "Streams", "tabSettings": "Indstillinger", "title": "Mobil", "sub": "Ved 720px og under stables widgets i én kolonne, og kø-tabellen skifter til en kortliste med rækker, der kan udvides.", "capDashboard": "Dashboard — KPI-stribe, derefter feed og streams stablet i én kolonne", "capQueue": "Kø — tabellen bliver en kortliste; en række udvides på plads og viser fremgang og handlinger", "rulesTitle": "Regler for breakpoint", "rule1t": "≤ 720px", "rule1d": "Én kolonne. Feed, streams, kø og sundhed stables i den rækkefølge — køen bliver det sidste fuldbredde blok.", "rule2t": "Køens kolonner", "rule2d": "Tjenestemærke, titel, kvalitet og status bevares på det sammenfoldede kort. Progressionskolonnen og ETA flyttes ned i den udvidede række.", "rule3t": "Rækkehøjde", "rule3d": "Sammenfoldede kort er 64px høje, så otte rækker passer på en 667px skærm. Udvidede rækker vokser efter indholdet; listen ruller aldrig sidelæns.", "rule4t": "Touchmål", "rule4d": "Alle kontroller er mindst 44×44px. Chevronen er det eneste håndtag på et sammenfoldet kort.", "rule5t": "Bundnavigation", "rule5d": "Fem faste destinationer, altid synlige. Kø-badge viser antallet af pause, så belastningen kan vurderes uden at åbne køen.", "queuePaused": "31 i pause"}, "stale": {"banner": "Forbinder igen til OpsPulse-backend…"}, "states": {"title": "Tilstande for kø-handlinger", "sub": "De fire tilstande, enhver kø-handling gennemgår, vist side om side så afleveringen er entydig.", "tableTitle": "Handlingstilstande i en kø-række", "footnote": "Ét markup, fire tilstande", "toastTitle": "Beskeder", "staleTitle": "Mistet forbindelse", "staleBody": "Banneret er diskret, data gråner, og handlinger er låst indtil forbindelsen er tilbage. Intet slettes — sidste kendte værdier står på skærmen og fortsætter derfra.", "legendIdle": "Intet i gang. Rækken viser serverens tilstand.", "legendPending": "Ændringen er sendt. Rækken farves, og handlingen viser en roterende markering.", "legendSuccess": "Serveren bekræftede. Rækken sætter sig én gang og vender tilbage til ledig tilstand.", "legendError": "Serveren afviste ændringen. Rækken rulles tilbage, og en besked forklarer hvorfor.", "specTitle": "Tokens & spec", "specSub": "Værdierne nedenfor er bundet til tokens.css — ændr tokenet, ikke komponenten.", "specStatus": "Statuspalette", "specStatusSub": "Kun funktionelt — aldrig dekorativt", "specViz": "Datavisualisering", "specVizSub": "Sekventiel skala (7) + kategorisk (6)", "specDensity": "Tæthed", "specMotion": "Bevægelse", "specBase": "Basisfarver", "specBaseSub": "Lerred, paneler og tekst", "specType": "Typografi", "specTypeSub": "IBM Plex Sans til UI · IBM Plex Mono til tal", "specSpace": "Afstand", "specSpaceSub": "4px grundskala", "specRadius": "Hjørner", "specRadiusSub": " Afrunding af hjørner", "specShadow": "Skygger", "specShadowSub": "Højde, mørkt tema", "densityTitle": "Tæthed i brug", "densitySub": "Samme markup, to tætheder", "densityComfortable": "Behagelig", "densityComfortableMeta": "række 44px · celle 11/14", "densityCompact": "Kompakt", "densityCompactMeta": "række 32px · celle 5/10", "densityBody": "Tæthed er ét attribut på rod-elementet. Alle tabelceller, feed-rækker og widgets følger den nye rækkehøjde, padding og type størrelse — der skrives ingen komponentvariant til det.", "colActionState": "Handlingstilstand"}, "time": {"agoMin": "{n} min. siden", "agoSec": "{n} s siden", "durMin": "{n} min.", "durSec": "{n} s", "durDayHour": "{d} d {h} t", "durHourMin": "{t} t {m} min", "durDay": "{d} d"}, "svcType": {"movies": "Film", "series": "Serier", "mediaServer": "Medieserver", "analytics": "Analytics", "requests": "Forespørgsler", "indexers": "Indexere", "diskHealth": "Disk-helse", "libraryCleanup": "Biblioteksoprydning", "unpack": "Udpakning", "collections": "Samlinger", "containers": "Containere", "updates": "Opdateringer", "proxy": "Proxy"}, "feedItems": {"ripleyDownloaded": "{title} · download fuldført", "kpopImported": "{title} · importeret", "avatarUnpackFailed": "{title} · udpakning mislykkedes", "duneAdded": "{title} · tilføjet til {lib}", "fantasticStarted": "{title} · startet", "weaponsGrabFailed": "{title} · hentning mislykkedes (indekserings-timeout)", "season2Archived": "{title} arkiveret · {n} filer fjernet", "smartReallocated": "SMART-attribut {n} omfordelt på {dev}"}, "errorItems": {"unpackFailed": "Udpakning mislykkedes · {title}", "grabFailed": "Hentning mislykkedes · {title} (indekserings-timeout)", "smartWarning": "SMART-attribut {n} omfordelte sektorer", "containerStopped": "Containeren stoppede under billedopdatering"}}};
+let lang = 'en';
+const t = (key, args) => {
+  const parts = key.split('.');
+  let node = COPY[lang];
+  for (const p of parts) { if (node == null) return key; node = node[p]; }
+  if (typeof node !== 'string') return key;
+  if (args) for (const [k, v] of Object.entries(args)) node = node.split('{' + k + '}').join(v);
+  return node;
+};
+
+/* ── data model (demo mode) ─────────────────────────────────────────────── */
+const SERVICES = [
+  { id: 'radarr',     name: 'Radarr',     typeKey: 'movies', icon: 'assets/icons/radarr.svg', key: 'a1f3', syncSec: 4 },
+  { id: 'sonarr',     name: 'Sonarr',     typeKey: 'series', icon: 'assets/icons/sonarr.svg', key: '9c02', syncSec: 7 },
+  { id: 'plex',       name: 'Plex',       typeKey: 'mediaServer', icon: 'assets/icons/plex.svg', key: '2b7e', syncSec: 1 },
+  { id: 'tautulli',   name: 'Tautulli',   typeKey: 'analytics', icon: 'assets/icons/tautulli.svg', key: 'd480', syncSec: 12 },
+  { id: 'overseerr',  name: 'Overseerr',  typeKey: 'requests', icon: 'assets/icons/overseerr.svg', key: '5e11', syncSec: 38 },
+  { id: 'prowlarr',   name: 'Prowlarr',   typeKey: 'indexers', icon: 'assets/icons/prowlarr.png', key: '7c93', syncSec: 22 },
+  { id: 'scrutiny',   name: 'Scrutiny',   typeKey: 'diskHealth', icon: 'assets/icons/scrutiny.svg', key: '', syncMin: 2 },
+  { id: 'maintainerr',name: 'Maintainerr',typeKey: 'libraryCleanup',icon:'assets/icons/maintainerr.png',key: '1d09', syncMin: 9 },
+  { id: 'unpackerr',  name: 'Unpackerr',  typeKey: 'unpack', icon: 'assets/icons/unpackerr.png', key: '8f42', syncMin: 3 },
+  { id: 'kometa',     name: 'Kometa',     typeKey: 'collections', icon: 'assets/icons/kometa.png', key: '4a6d', syncMin: 15 },
+  { id: 'portainer',  name: 'Portainer',  typeKey: 'containers', icon: 'assets/icons/portainer.svg', key: '', syncSec: 31 },
+  { id: 'watchtower', name: 'Watchtower', typeKey: 'updates', icon: 'assets/icons/watchtower.png', key: '', syncMin: 6 },
+  { id: 'flaresolverr',name:'FlareSolverr',typeKey:'proxy',        icon: 'assets/icons/flaresolverr.svg',key:'',    syncMin: 5 }
+];
+
+const QUEUE = [
+  { id: 'q1',  svc: 'radarr',   title: 'Dune: Part Two',              sub: '2024 · 166 min',   quality: 'Bluray-1080p',  progress: 64, eta: '12 min', status: 'downloading' },
+  { id: 'q2',  svc: 'sonarr',   title: 'Blue Eye Samurai',            sub: 'S01E04 · 24 min',  quality: 'WEB-DL-1080p',  progress: 88, eta: '3 min',  status: 'downloading' },
+  { id: 'q3',  svc: 'radarr',   title: 'Sinners',                     sub: '2025 · 138 min',   quality: 'Bluray-2160p',  progress: 41, eta: '38 min', status: 'downloading' },
+  { id: 'q4',  svc: 'sonarr',   title: 'Ripley',                      sub: 'S01E02 · 58 min',  quality: 'WEB-DL-1080p',  progress: 100, eta: '—',    status: 'seeding' },
+  { id: 'q5',  svc: 'radarr',   title: 'The Fantastic Four: First Steps', sub: '2025 · 126 min', quality: 'Bluray-2160p',  progress: 17, eta: '1h 12m',status: 'downloading' },
+  { id: 'q6',  svc: 'sonarr',   title: 'KPop Demon Hunters',          sub: 'S01E01 · 102 min', quality: 'WEB-DL-1080p',  progress: 72, eta: '9 min',  status: 'downloading' },
+  { id: 'q7',  svc: 'radarr',   title: 'Superman',                    sub: '2025 · 129 min',   quality: 'Bluray-1080p',  progress: 0,  eta: '—',      status: 'paused' },
+  { id: 'q8',  svc: 'radarr',   title: 'Avatar: Fire and Ash',        sub: '2025 · 192 min',   quality: 'Bluray-2160p',  progress: 55, eta: '44 min', status: 'failed' },
+  { id: 'q9',  svc: 'sonarr',   title: 'Arcane',                      sub: 'S02E01 · 41 min',  quality: 'WEB-DL-2160p',  progress: 93, eta: '2 min',  status: 'downloading' },
+  { id: 'q10', svc: 'radarr',   title: 'Weapons',                     sub: '2025 · 128 min',   quality: 'WEB-DL-1080p',  progress: 29, eta: '26 min', status: 'downloading' }
+];
+
+const FEED = [
+  { svc: 'radarr',     action: 'downloadFinished', tpl: 'ripleyDownloaded',     title: 'Ripley',                          mins: 2,  sev: 'ok' },
+  { svc: 'sonarr',     action: 'importFinished',   tpl: 'kpopImported',         title: 'KPop Demon Hunters S01E01',      mins: 6,  sev: 'ok' },
+  { svc: 'unpackerr',  action: 'unpackFailed',     tpl: 'avatarUnpackFailed',   title: 'Avatar: Fire and Ash',            mins: 9,  sev: 'error' },
+  { svc: 'plex',       action: 'mediaAdded',       tpl: 'duneAdded',            title: 'Dune: Part Two',                  mins: 14, sev: 'ok', lib: 'Film' },
+  { svc: 'radarr',     action: 'downloadStarted',  tpl: 'fantasticStarted',     title: 'The Fantastic Four: First Steps', mins: 18, sev: 'ok' },
+  { svc: 'overseerr',  action: 'grabFailed',       tpl: 'weaponsGrabFailed',    title: 'Weapons',                         mins: 24, sev: 'error' },
+  { svc: 'maintainerr',action: 'mediaAdded',       tpl: 'season2Archived',      title: 'Season 2',                        mins: 31, sev: 'ok', n: 41 },
+  { svc: 'scrutiny',   action: 'healthFailed',     tpl: 'smartReallocated',     title: 'SMART attribute 5',               mins: 46, sev: 'warn', n: 5, dev: 'Media' }
+];
+
+const STREAMS = [
+  { poster: 'assets/posters/dune-part-two.jpg', alt: 'Dune: Part Two poster', user: 'benne', title: 'Dune: Part Two', device: 'Apple TV 4K', bitrate: '18.4 Mbps', mode: 'direct', cpu: null, mins: 42 },
+  { poster: 'assets/posters/blue-eye-samurai.jpg', alt: 'Blue Eye Samurai poster', user: 'gæst', title: 'Blue Eye Samurai', device: 'Chrome · macOS', bitrate: '7.9 Mbps', mode: 'transcode', cpu: 34, mins: 11 },
+  { poster: 'assets/posters/ripley.jpg', alt: 'Ripley poster', user: 'benne', title: 'Ripley', device: 'iPhone 15', bitrate: '5.1 Mbps', mode: 'direct', cpu: null, mins: 3 }
+];
+
+const CONTAINERS = [
+  { name: 'radarr',      icon: 'assets/icons/radarr.svg',      state: 'up',   up: true,  d: 14, h: 6 },
+  { name: 'sonarr',      icon: 'assets/icons/sonarr.svg',      state: 'up',   up: true,  d: 14, h: 6 },
+  { name: 'prowlarr',    icon: 'assets/icons/prowlarr.png',    state: 'up',   up: true,  d: 14, h: 6 },
+  { name: 'tautulli',    icon: 'assets/icons/tautulli.svg',    state: 'up',   up: true,  d: 14, h: 5 },
+  { name: 'kometa',      icon: 'assets/icons/kometa.png',      state: 'up',   up: true,  d: 9,  h: 2 },
+  { name: 'maintainerr', icon: 'assets/icons/maintainerr.png', state: 'up',   up: true,  d: 9,  h: 2 },
+  { name: 'unpackerr',   icon: 'assets/icons/unpackerr.png',   state: 'up',   up: true,  d: 14, h: 6 },
+  { name: 'overseerr',   icon: 'assets/icons/overseerr.svg',   state: 'up',   up: true,  d: 14, h: 6 },
+  { name: 'flaresolverr',icon: 'assets/icons/flaresolverr.svg',state: 'up',   up: true,  d: 6,  h: 11 },
+  { name: 'scrutiny',    icon: 'assets/icons/scrutiny.svg',    state: 'up',   up: true,  d: 14, h: 6 },
+  { name: 'portainer',   icon: 'assets/icons/portainer.svg',   state: 'up',   up: true,  d: 14, h: 6 },
+  { name: 'watchtower',  icon: 'assets/icons/watchtower.png',  state: 'down', up: false, mins: 6 }
+];
+
+const ERRORS = [
+  { sev: 'error',   svc: 'unpackerr',  tpl: 'unpackFailed',     title: 'Avatar: Fire and Ash', mins: 9  },
+  { sev: 'error',   svc: 'overseerr',  tpl: 'grabFailed',       title: 'Weapons',              mins: 24 },
+  { sev: 'warning', svc: 'scrutiny',   tpl: 'smartWarning',     n: 5,                     mins: 46 },
+  { sev: 'info',    svc: 'watchtower', tpl: 'containerStopped',                           mins: 6  }
+];
+
+/* history series — hour / day / week */
+const SERIES = {
+  hour: { labels: ['00','02','04','06','08','10','12','14','16','18','20','22'], downloads: [0,0,1,2,3,2,4,3,5,4,3,2], errors: [0,0,0,0,1,0,0,1,0,0,1,0], sub: 'Last 12 hours' },
+  day:  { labels: ['00','04','08','12','16','20','24'], downloads: [1,3,8,12,7,4,2], errors: [0,0,1,0,2,0,0], sub: 'Last 24 hours' },
+  week: { labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], downloads: [14,18,9,22,16,25,11], errors: [1,0,2,1,0,3,1], sub: 'Last 7 days' }
+};
+
+const svc = id => SERVICES.find(s => s.id === id) || { name: id, icon: '' };
+const DEFAULT_PORTS = { radarr: 7878, sonarr: 8989, prowlarr: 9696, tautulli: 8181, overseerr: 5055, plex: 32400, scrutiny: 8080, maintainerr: 6246, unpackerr: 8001, kometa: 3000, portainer: 9000, flaresolverr: 8191 };
+const defaultUrl = id => DEFAULT_PORTS[id] ? 'http://localhost:' + DEFAULT_PORTS[id] : '—';
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+/* ── queue rendering ────────────────────────────────────────────────────── */
+let queueFilter = 'all', queueQuery = '', queueSort = { key: null, dir: 1 };
+
+function statusChip(st) {
+  const map = { downloading: ['ok', 'queue.statusDownloading'], seeding: ['neutral', 'queue.statusSeeding'], paused: ['warn', 'queue.statusPaused'], failed: ['danger', 'queue.statusFailed'] };
+  const [cls, key] = map[st] || ['neutral', 'queue.colStatus'];
+  return `<span class="chip ${cls}"><i class="dot"></i>${esc(t(key))}</span>`;
+}
+
+function rowActions(row, state) {
+  if (state === 'pending') {
+    return `<button class="icon-action is-pending" disabled aria-label="${esc(t('queue.statePending'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9" /></svg></button>`;
+  }
+  if (state === 'success') {
+    return `<span class="icon-action is-ok" title="${esc(t('queue.stateSuccess'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg></span>`;
+  }
+  if (state === 'error') {
+    return `<span class="icon-action is-error" title="${esc(t('queue.stateError'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></span>`;
+  }
+  const isPaused = row.status === 'paused';
+  return `
+    <button class="icon-action" data-act="${isPaused ? 'resume' : 'pause'}" data-id="${row.id}" title="${esc(t(isPaused ? 'queue.actionResume' : 'queue.actionPause'))}" aria-label="${esc(t(isPaused ? 'queue.actionResume' : 'queue.actionPause'))}">
+      ${isPaused
+        ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>'
+        : '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="5" width="3.5" height="14" rx="1"/><rect x="13.5" y="5" width="3.5" height="14" rx="1"/></svg>'}
+    </button>
+    <button class="icon-action danger" data-act="remove" data-id="${row.id}" title="${esc(t('queue.actionRemove'))}" aria-label="${esc(t('queue.actionRemove'))}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M5 7h14M10 7V5h4v2M9 11v6M15 11v6M7 7l1 13h8l1-13"/></svg>
+    </button>`;
+}
+
+function queueRow(row, state) {
+  const s = svc(row.svc);
+  const barCls = row.status === 'failed' ? 'failed' : row.status === 'paused' ? 'paused' : '';
+  const stateTag = state ? `<span class="state-tag ${state}">${esc(t('queue.state' + state[0].toUpperCase() + state.slice(1)))}</span>` : '';
+  return `<tr data-id="${row.id}" class="${state ? 'state-' + state : ''}">
+    <td><span class="svc"><img src="${s.icon}" alt="" width="16" height="16"><span class="svc-name">${esc(s.name)}</span></span></td>
+    <td><div class="title-cell"><span class="t">${esc(row.title)}</span><span class="s">${esc(row.sub)}</span></div></td>
+    <td><span class="quality">${esc(row.quality)}</span></td>
+    <td><div class="bar-wrap"><div class="bar ${barCls}"><i style="width:${row.progress}%"></i></div><span class="pct">${row.progress}%</span></div></td>
+    <td><span class="num">${esc(row.eta)}</span></td>
+    <td>${statusChip(row.status)} ${stateTag}</td>
+    <td><div class="row-actions">${rowActions(row, state)}</div></td>
+  </tr>`;
+}
+
+function visibleQueue() {
+  let rows = QUEUE.slice();
+  if (queueFilter !== 'all') rows = rows.filter(r => r.status === queueFilter);
+  if (queueQuery) {
+    const q = queueQuery.toLowerCase();
+    rows = rows.filter(r => r.title.toLowerCase().includes(q) || svc(r.svc).name.toLowerCase().includes(q));
+  }
+  if (queueSort.key) {
+    const k = queueSort.key;
+    rows.sort((a, b) => {
+      const av = k === 'service' ? svc(a.svc).name : k === 'title' ? a.title : k === 'quality' ? a.quality : k === 'progress' ? a.progress : k === 'eta' ? a.eta : a.status;
+      const bv = k === 'service' ? svc(b.svc).name : k === 'title' ? b.title : k === 'quality' ? b.quality : k === 'progress' ? b.progress : k === 'eta' ? b.eta : b.status;
+      if (typeof av === 'number') return (av - bv) * queueSort.dir;
+      return String(av).localeCompare(String(bv)) * queueSort.dir;
+    });
+  }
+  return rows;
+}
+
+function renderQueue() {
+  const rows = visibleQueue();
+  const body = document.getElementById('queue-body');
+  body.innerHTML = rows.length
+    ? rows.map(r => queueRow(r, null)).join('')
+    : `<tr><td colspan="7" style="padding:32px;text-align:center;color:var(--muted)">${esc(t('queue.searchNoResult', { query: queueQuery }))}</td></tr>`;
+  document.getElementById('queue-count').textContent = t('queue.rowCount', { shown: rows.length, total: 12480 });
+  document.getElementById('queue-virtual').textContent = t('queue.virtualised', { n: rows.length });
+  document.getElementById('queue-state-legend').textContent = `${t('queue.stateIdle')} · ${t('queue.statePending')} · ${t('queue.stateSuccess')} · ${t('queue.stateError')}`;
+  document.querySelectorAll('[data-sort]').forEach(th => th.removeAttribute('aria-sort'));
+}
+
+/* ── feed / streams / containers / errors ───────────────────────────────── */
+function renderFeed(target, items, limit) {
+  const el = document.getElementById(target);
+  el.innerHTML = items.slice(0, limit).map(f => {
+    const s = svc(f.svc);
+    const args = { title: f.title, n: f.n, lib: f.lib, dev: f.dev };
+    const text = t('feedItems.' + f.tpl, args);
+    return `<li class="feed-item sev-${f.sev}">
+      <span class="ficon"><img src="${s.icon}" alt="" width="15" height="15"></span>
+      <span>
+        <span class="ftitle">${esc(text)}</span>
+        <span class="fsub">${esc(s.name)} · ${esc(t('feed.actions.' + f.action))}</span>
+      </span>
+      <span class="ftime">${esc(t('time.agoMin', { n: f.mins }))}</span>
+    </li>`;
+  }).join('');
+}
+
+function renderStreams() {
+  document.getElementById('streams-body').innerHTML = STREAMS.map(s => {
+    const isT = s.mode === 'transcode';
+    const cpu = s.cpu == null ? '' : `
+      <div class="cpu-meter ${s.cpu > 70 ? 'crit' : s.cpu > 45 ? 'warn' : ''}">
+        <div class="cm-top"><span>${esc(t('streams.cpuLabel'))}</span><span class="v">${s.cpu}%</span></div>
+        <div class="bar"><i style="width:${s.cpu}%"></i></div>
+      </div>`;
+    return `<div class="stream">
+      <img class="poster" src="${s.poster}" alt="${esc(s.alt)}" width="40" height="59" loading="lazy">
+      <span>
+        <span class="stitle">${esc(s.title)}</span>
+        <span class="smeta"><span>${esc(s.user)}</span><span>${esc(s.device)}</span><span class="num">${esc(s.bitrate)}</span></span>
+        <span class="smeta"><span>${esc(t('streams.started', { time: t('time.agoMin', { n: s.mins }) }))}</span></span>
+      </span>
+      <span class="sright">
+        <span class="chip ${isT ? 'warn' : 'ok'}">${esc(t(isT ? 'streams.transcode' : 'streams.directPlay'))}</span>
+        ${cpu}
+      </span>
+    </div>`;
+  }).join('');
+}
+
+function renderContainers() {
+  const up = CONTAINERS.filter(c => c.up).length;
+  document.getElementById('container-count').textContent = `${up}/${CONTAINERS.length} ${t('containers.up').toLowerCase()}`;
+  document.getElementById('container-list').innerHTML = CONTAINERS.map(c => {
+    const label = c.up
+      ? t('containers.uptime', { time: t('time.durDayHour', { d: c.d, h: c.h }) })
+      : t('containers.downSince', { time: t('time.durMin', { n: c.mins }) });
+    return `<li style="display:flex;align-items:center;gap:12px;padding:var(--feed-item-py) var(--widget-pad);border-bottom:1px solid var(--border-soft)">
+      <img src="${c.icon}" alt="" width="18" height="18" style="object-fit:contain">
+      <span style="font-size:var(--fs-13)">${esc(c.name)}</span>
+      <span class="spacer"></span>
+      <span class="chip ${c.up ? 'ok' : 'danger'}"><i class="dot"></i>${esc(t(c.up ? 'containers.up' : 'containers.down'))}</span>
+      <span class="num" style="font-size:var(--fs-12);color:var(--muted);width:104px;text-align:right;white-space:nowrap">${esc(label)}</span>
+    </li>`;
+  }).join('');
+}
+
+function renderErrors(target, items) {
+  const el = document.getElementById(target);
+  el.innerHTML = items.map(e => {
+    const s = svc(e.svc);
+    return `<li>
+      <span class="sev ${e.sev}"></span>
+      <span>${esc(t('errorItems.' + e.tpl, { title: e.title, n: e.n }))}<br><span style="font-size:var(--fs-11);color:var(--muted)">${esc(s.name)}</span></span>
+      <span class="err-time">${esc(t('time.agoMin', { n: e.mins }))}</span>
+    </li>`;
+  }).join('');
+}
+
+function toast(title, body, kind) {
+  const host = document.getElementById('toast-host');
+  const el = document.createElement('div');
+  el.className = 'toast' + (kind === 'error' ? ' error' : '');
+  el.innerHTML = `<span><span class="tt">${esc(title)}</span>${body ? `<span class="tb">${esc(body)}</span>` : ''}</span>
+    <button class="tx" aria-label="${esc(t('toast.dismiss'))}">✕</button>`;
+  el.querySelector('.tx').addEventListener('click', () => el.remove());
+  host.appendChild(el);
+  setTimeout(() => el.remove(), 6000);
+}
+
+function optimisticAction(id, act) {
+  const row = QUEUE.find(r => r.id === id);
+  if (!row) return;
+  const tr = document.querySelector(`tr[data-id="${id}"]`);
+  if (!tr) return;
+  const original = row.status;
+
+  // pending
+  tr.className = 'state-pending';
+  tr.innerHTML = queueRow(row, 'pending');
+
+  const willFail = row.status === 'failed' || row.id === 'q5';
+  setTimeout(() => {
+    if (willFail) {
+      tr.className = 'state-error';
+      tr.innerHTML = queueRow(row, 'error');
+      toast(t('toast.actionFailed'), t('toast.actionFailedBody', { title: row.title }), 'error');
+    } else {
+      row.status = act === 'pause' ? 'paused' : act === 'resume' ? 'downloading' : 'seeding';
+      tr.className = 'state-success';
+      tr.innerHTML = queueRow(row, 'success');
+      const msg = act === 'pause' ? t('toast.paused', { title: row.title })
+        : act === 'resume' ? t('toast.resumed', { title: row.title })
+        : t('toast.removed', { title: row.title });
+      toast(msg, '', 'ok');
+      setTimeout(() => { tr.className = ''; tr.innerHTML = queueRow(row, null); }, 1200);
+    }
+    if (willFail) setTimeout(() => { tr.className = ''; tr.innerHTML = queueRow(row, null); }, 2600);
+  }, 1100);
+}
+
+/* ── history chart (computed from data, never eyeballed) ────────────────── */
+let currentRange = 'day';
+function drawChart(range) {
+  currentRange = range;
+  const data = SERIES[range];
+  const W = 720, H = 260, padL = 40, padR = 16, padT = 16, padB = 34;
+  const max = Math.max(...data.downloads, 1);
+  const innerW = W - padL - padR, innerH = H - padT - padB;
+  const x = i => padL + (innerW * i) / (data.labels.length - 1);
+  const y = v => padT + innerH - (innerH * v) / max;
+
+  const line = data.downloads.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const area = `${line} L${x(data.labels.length - 1).toFixed(1)},${(padT + innerH).toFixed(1)} L${padL},${(padT + innerH).toFixed(1)} Z`;
+  const errBars = data.errors.map((v, i) => v ? `<rect x="${(x(i) - 3).toFixed(1)}" y="${(y(v) + 6).toFixed(1)}" width="6" height="10" rx="2" fill="var(--danger)"/>` : '').join('');
+
+  const grid = Array.from({ length: 5 }, (_, i) => {
+    const v = Math.round((max / 4) * (4 - i));
+    const yy = y(v);
+    return `<line x1="${padL}" y1="${yy}" x2="${W - padR}" y2="${yy}" stroke="var(--border)" stroke-width="1"/>
+            <text x="${padL - 8}" y="${yy + 4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="var(--font-mono)">${v}</text>`;
+  }).join('');
+
+  const xLabels = data.labels.map((l, i) => `<text x="${x(i).toFixed(1)}" y="${H - 12}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--font-mono)">${l}</text>`).join('');
+
+  const svg = document.getElementById('history-svg');
+  svg.innerHTML = `
+    <defs><linearGradient id="dlGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="var(--viz-cat-1)" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="var(--viz-cat-1)" stop-opacity="0.02"/>
+    </linearGradient></defs>
+    ${grid}
+    <path d="${area}" fill="url(#dlGrad)"/>
+    <path d="${line}" fill="none" stroke="var(--viz-cat-1)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${data.downloads.map((v, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3" fill="var(--viz-cat-1)"/>`).join('')}
+    ${errBars}
+    ${xLabels}
+    <g id="chart-hover"></g>
+    <rect id="chart-hit" x="${padL}" y="${padT}" width="${innerW}" height="${innerH}" fill="transparent" style="cursor:crosshair"/>`;
+
+  const statPeak = Math.max(...data.downloads);
+  const statTotal = data.downloads.reduce((a, b) => a + b, 0);
+  const statAvg = (statTotal / data.downloads.length).toFixed(1);
+  document.getElementById('stat-peak').textContent = statPeak;
+  document.getElementById('stat-total').textContent = statTotal;
+  document.getElementById('stat-avg').textContent = statAvg;
+  document.getElementById('history-metric-sub').textContent = data.sub;
+  document.getElementById('history-drill-title').textContent = t('history.' + (range === 'hour' ? 'windowHours' : range === 'week' ? 'windowWeek' : 'windowDay'));
+  document.getElementById('stat-peak-label').textContent = t('history.peakPer');
+  document.getElementById('stat-total-label').textContent = t('history.totalIn');
+  document.getElementById('stat-avg-label').textContent = t('history.avgPer');
+  const hE = ERRORS.filter(e => e.sev === 'error').length;
+  const hW = ERRORS.filter(e => e.sev === 'warning').length;
+  const hI = ERRORS.filter(e => e.sev === 'info').length;
+  document.getElementById('history-error-count').textContent =
+    [hE ? `${hE} ${t('errors.severityError').toLowerCase()}` : null,
+     hW ? `${hW} ${t('errors.severityWarning').toLowerCase()}` : null,
+     hI ? `${hI} ${t('errors.severityInfo').toLowerCase()}` : null].filter(Boolean).join(' · ');
+  document.getElementById('history-errors').innerHTML = ERRORS.map(e =>
+    `<li><span class="sev ${e.sev}"></span><span>${esc(t('errorItems.' + e.tpl, { title: e.title, n: e.n }))}</span><span class="err-time">${esc(t('time.agoMin', { n: e.mins }))}</span></li>`).join('');
+
+  // hover tooltip — pinned to the peak on load so the design reference always
+  // shows the tooltip treatment; hovering moves it, leaving returns to the pin.
+  const tip = document.getElementById('chart-tip');
+  const hover = svg.querySelector('#chart-hover');
+  const hit = svg.querySelector('#chart-hit');
+  const wrap = document.getElementById('chart-wrap');
+  const peakIdx = data.downloads.indexOf(Math.max(...data.downloads));
+  const flipTip = pointY => {
+    const svgR = svg.getBoundingClientRect();
+    if (!svgR.height) { tip.style.transform = 'translate(-50%, -100%)'; tip.style.marginTop = '-8px'; return; }
+    const yPx = svgR.top + (pointY / H) * svgR.height;
+    const fits = yPx - tip.offsetHeight - 10 >= svgR.top;
+    tip.style.transform = fits ? 'translate(-50%, -100%)' : 'translate(-50%, 0)';
+    tip.style.marginTop = fits ? '-8px' : '10px';
+  };
+  const showTipAt = i => {
+    const v = data.downloads[i];
+    const cx = x(i), cy = y(v);
+    hover.innerHTML = `<line x1="${cx}" y1="${padT}" x2="${cx}" y2="${padT + innerH}" stroke="var(--border-strong)" stroke-width="1"/>
+      <circle cx="${cx}" cy="${cy}" r="5" fill="var(--viz-cat-1)" stroke="var(--surface)" stroke-width="2"/>`;
+    const stamp = range === 'week' ? data.labels[i] : data.labels[i] + ':00';
+    tip.innerHTML = `<span class="tv">${esc(stamp)}</span> · ${v} ${esc(t('history.legendDownloads').toLowerCase())}${data.errors[i] ? ` · ${data.errors[i]} ${esc(t('history.legendErrors').toLowerCase())}` : ''}`;
+    // Percentage-based so the anchor is correct even before the view is
+    // measured (drawChart runs while #view-history is still hidden).
+    tip.style.left = ((cx / W) * 100).toFixed(2) + '%';
+    tip.style.top = ((cy / H) * 100).toFixed(2) + '%';
+    tip.classList.add('on');
+    flipTip(cy);
+  };
+  hit.addEventListener('mousemove', ev => {
+    const r = svg.getBoundingClientRect();
+    const px = ((ev.clientX - r.left) / r.width) * W;
+    let i = 0, best = Infinity;
+    data.labels.forEach((_, idx) => { const d = Math.abs(x(idx) - px); if (d < best) { best = d; i = idx; } });
+    showTipAt(i);
+  });
+  hit.addEventListener('mouseleave', () => showTipAt(peakIdx));
+  showTipAt(peakIdx);
+}
+
+/* ── onboarding wizard ──────────────────────────────────────────────────── */
+let wizStep = 1;
+const wizSelected = new Set(['radarr', 'sonarr', 'plex', 'tautulli', 'scrutiny']);
+
+function renderWizardSteps() {
+  const el = document.getElementById('wizard-steps');
+  el.setAttribute('data-step', String(wizStep));
+  const labels = [t('onboarding.step1Title'), t('onboarding.step2Title'), t('onboarding.step3Title')];
+  el.innerHTML = `<span class="label" style="margin-right:8px">${esc(t('onboarding.step', { n: wizStep, total: 3 }))}</span>` + labels.map((l, i) => {
+    const n = i + 1;
+    const state = n < wizStep ? 'done' : n === wizStep ? 'active' : 'todo';
+    return `${i ? '<span class="step-sep"></span>' : ''}<span class="step-pip" data-state="${state}"><span class="pip">${state === 'done' ? '✓' : n}</span><span>${esc(l)}</span></span>`;
+  }).join('');
+  document.getElementById('wizard-step-1').hidden = wizStep !== 1;
+  document.getElementById('wizard-step-2').hidden = wizStep !== 2;
+  document.getElementById('wizard-step-3').hidden = wizStep !== 3;
+  document.getElementById('wizard-back').style.visibility = wizStep === 1 ? 'hidden' : 'visible';
+  document.getElementById('wizard-next').textContent = wizStep === 3 ? t('onboarding.finish') : t('onboarding.next');
+  document.getElementById('wizard-next').style.display = wizStep === 3 ? 'none' : 'inline-flex';
+  document.querySelector('#view-onboarding .view-head h1').textContent = labels[wizStep - 1];
+  document.querySelector('#view-onboarding .view-head p').textContent = t(['onboarding.step1Body', 'onboarding.step2Body', 'onboarding.step3Body'][wizStep - 1]);
+}
+
+function renderServiceGrid() {
+  document.getElementById('wizard-svc-grid').innerHTML = SERVICES.map(s => `
+    <button class="svc-tile" data-svc="${s.id}" aria-pressed="${wizSelected.has(s.id)}">
+      <img src="${s.icon}" alt="">
+      <span><span class="n">${esc(s.name)}</span><br><span class="t">${esc(t('svcType.' + s.typeKey))}</span></span>
+      <span class="pick">${wizSelected.has(s.id) ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>' : ''}</span>
+    </button>`).join('');
+  document.getElementById('wizard-selected').textContent = t('onboarding.selected', { n: wizSelected.size });
+}
+
+function renderWizardForms() {
+  const picked = SERVICES.filter(s => wizSelected.has(s.id));
+  document.getElementById('wizard-forms').innerHTML = picked.map(s => {
+    const isPlex = s.id === 'plex';
+    const keyLabel = isPlex ? t('onboarding.token') : t('onboarding.apiKey');
+    const keyPlaceholder = isPlex ? t('onboarding.tokenPlaceholder') : t('onboarding.apiKeyPlaceholder');
+    return `<div style="margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border-soft)">
+      <div class="row" style="margin-bottom:10px">
+        <img src="${s.icon}" alt="" width="20" height="20" style="object-fit:contain">
+        <strong style="font-size:var(--fs-14)">${esc(s.name)}</strong>
+        <span class="spacer"></span>
+        <span class="chip neutral">${esc(t('svcType.' + s.typeKey))}</span>
+      </div>
+      <div class="field"><label for="url-${s.id}">${esc(t('onboarding.url'))}</label>
+        <input class="input mono" id="url-${s.id}" value="${defaultUrl(s.id)}" placeholder="${esc(t('onboarding.urlPlaceholder'))}"></div>
+      <div class="field"><label for="key-${s.id}">${esc(keyLabel)}
+          <span class="chip neutral" style="font-size:10px;padding:1px 7px;margin-left:6px">${esc(t('onboarding.maskedNote'))}</span></label>
+        <input class="input mono" id="key-${s.id}" type="password" placeholder="${esc(keyPlaceholder)}" autocomplete="off">
+        <span class="field-hint">${esc(t('onboarding.keyHint'))}</span></div>
+      <div class="row"><button class="btn" data-test="${s.id}">${esc(t('onboarding.testConnection'))}</button>
+        <span class="test-result" id="test-${s.id}"></span></div>
+    </div>`;
+  }).join('');
+}
+
+function renderWizardSummary() {
+  const list = SERVICES.filter(s => wizSelected.has(s.id));
+  document.getElementById('wizard-summary').innerHTML = list.map(s => {
+    const endpoint = defaultUrl(s.id);
+    return `<li class="conn-summary-item">
+      <img src="${s.icon}" alt="" width="18" height="18" style="object-fit:contain">
+      <span class="cs-name">${esc(s.name)}</span>
+      <span class="cs-meta">${endpoint === '—' ? esc(t('settings.noEndpoint')) : esc(endpoint)}</span>
+      <span class="chip ok"><i class="dot"></i>${esc(t('settings.testOk'))}</span>
+    </li>`;}).join('');
+}
+
+function renderWizardYaml() {
+  const lines = ['services:'];
+  SERVICES.filter(s => wizSelected.has(s.id)).forEach(s => {
+    const isPlex = s.id === 'plex';
+    lines.push(`  - id: ${s.id}`);
+    lines.push(`    type: ${s.id}`);
+    lines.push(`    url: ${defaultUrl(s.id)}`);
+    if (s.id !== 'scrutiny') lines.push(`    ${isPlex ? 'token' : 'api_key'}: \${${s.id.toUpperCase()}_${isPlex ? 'TOKEN' : 'API_KEY'}}`);
+  });
+  lines.push('');
+  lines.push('ui:');
+  lines.push('  theme: ' + (document.documentElement.getAttribute('data-theme') || 'dark'));
+  lines.push('  language: ' + lang);
+  lines.push('  density: comfortable');
+  document.getElementById('wizard-yaml').textContent = lines.join('\n');
+}
+
+function renderMiniDash(target) {
+  const rows = [
+    [t('kpi.downloads'), '12', '64%', ''],
+    [t('kpi.activeStreams'), '3', '30%', ''],
+    [t('kpi.queueSize'), '12,480', '82%', ''],
+    [t('kpi.diskTemp'), '44°', '58%', 'var(--warn)'],
+    [t('errors.title'), '3', '12%', 'var(--danger)']
+  ];
+  const kpis = rows.map(([k, v, w, c]) =>
+    `<div class="mini-row"><span class="k">${esc(k)}</span>
+       <span class="v"${c ? ` style="color:${c}"` : ''}>${esc(v)}</span>
+       <span class="mini-bar"><i style="width:${w}${c ? `;background:${c}` : ''}"></i></span>
+     </div>`).join('');
+  const feed = FEED.slice(0, 3).map(item => {
+    const sv = svc(item.svc);
+    return `<div class="mini-feed-item sev-${item.sev}">
+      <span class="mini-fi"><img src="${sv.icon}" alt="" width="13" height="13"></span>
+      <span class="mini-ft">${esc(t('feedItems.' + item.tpl, { title: item.title, n: item.n, lib: item.lib, dev: item.dev }))}</span>
+      <span class="mini-fm">${esc(t('time.agoMin', { n: item.mins }))}</span>
+    </div>`;
+  }).join('');
+  document.getElementById(target).innerHTML =
+    `<div class="mini-sec">${esc(t('onboarding.previewOverview'))}</div>` + kpis +
+    `<div class="mini-sec">${esc(t('feed.title'))}</div>` + feed;
+}
+
+/* ── settings ───────────────────────────────────────────────────────────── */
+function renderConnectorList() {
+  document.getElementById('settings-connector-count').textContent = `${SERVICES.length}`;
+  const head = `<div class="conn-head" role="row">
+      <span role="columnheader">${esc(t('settings.colService'))}</span>
+      <span role="columnheader">${esc(t('settings.colEndpoint'))}</span>
+      <span role="columnheader">${esc(t('settings.colKey'))}</span>
+      <span role="columnheader">${esc(t('settings.colSync'))}</span>
+      <span role="columnheader">${esc(t('settings.colStatus'))}</span>
+      <span role="columnheader" class="ta-r">${esc(t('settings.colActions'))}</span>
+    </div>`;
+  document.getElementById('settings-connector-list').innerHTML = head + SERVICES.map(s => {
+    const endpoint = defaultUrl(s.id);
+    const hasWeb = endpoint !== '—';
+    return `
+    <div class="conn-row" role="row">
+      <span class="conn-svc" role="cell">
+        <img src="${s.icon}" alt="" width="22" height="22" style="object-fit:contain">
+        <span><span class="conn-name">${esc(s.name)}</span><span class="conn-type">${esc(t('svcType.' + s.typeKey))}</span></span>
+      </span>
+      <span class="mono conn-endpoint" role="cell">${hasWeb ? esc(endpoint) : esc(t('settings.noEndpoint'))}</span>
+      <span class="masked conn-key" role="cell">${s.key ? esc(t('settings.maskedKey', { last4: s.key })) : esc(t('settings.noKey'))}</span>
+      <span class="num conn-sync" role="cell">${esc(t('settings.lastSync', { time: s.syncSec != null ? t('time.agoSec', { n: s.syncSec }) : t('time.agoMin', { n: s.syncMin }) }))}</span>
+      <span role="cell">${hasWeb
+        ? `<span class="chip ok"><i class="dot"></i>${esc(t('settings.testOk'))}</span>`
+        : `<span class="chip neutral">${esc(t('settings.notWebService'))}</span>`}</span>
+      <span class="conn-actions" role="cell">
+        ${hasWeb ? `<button class="btn btn-ghost btn-sm" data-test-conn="${esc(s.id)}">${esc(t('settings.testAction'))}</button>` : ''}
+        <button class="icon-action" title="${esc(t('settings.edit'))}" aria-label="${esc(t('settings.edit'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="m14 6 4 4"/></svg></button>
+        <button class="icon-action danger" title="${esc(t('settings.delete'))}" aria-label="${esc(t('settings.delete'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M5 7h14M10 7V5h4v2M9 11v6M15 11v6M7 7l1 13h8l1-13"/></svg></button>
+      </span>
+    </div>`;}).join('');
+}
+
+function renderLayoutGrid() {
+  // Mirrors the `widgets:` block in opspulse.yaml — position is [x, y, w, h]
+  // on a 6-column grid, exactly what the config file declares.
+  const cells = [
+    { t: t('feed.title'),      p: [0, 0, 2, 2] },
+    { t: t('queue.title'),     p: [2, 0, 4, 2] },
+    { t: t('disk.title'),      p: [0, 2, 2, 1] },
+    { t: t('streams.title'),   p: [2, 2, 2, 1] },
+    { t: t('containers.title'),p: [4, 2, 2, 1] },
+    { t: t('errors.title'),    p: [0, 3, 6, 1] }
+  ];
+  const rows = Math.max(...cells.map(c => c.p[1] + c.p[3]));
+  const grid = document.getElementById('layout-grid');
+  grid.style.gridTemplateRows = `repeat(${rows}, minmax(64px, auto))`;
+  grid.innerHTML = cells.map(c => `
+    <div class="layout-cell" draggable="true" style="grid-column:${c.p[0] + 1} / span ${c.p[2]};grid-row:${c.p[1] + 1} / span ${c.p[3]}">
+      <span class="lc-title">${esc(c.t)}</span>
+      <span class="lc-size">[${c.p.join(', ')}]</span>
+      <span class="drag" title="${esc(t('settings.dragHint'))}"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01"/></svg></span>
+    </div>`).join('');
+}
+
+/* ── mobile ─────────────────────────────────────────────────────────────── */
+let phoneTab = 'dashboard';
+function renderPhone() {
+  const body = document.getElementById('phone-body');
+  if (phoneTab === 'dashboard') {
+    body.innerHTML = `
+      <div class="m-card" style="padding:12px 16px">
+        <span class="label">${esc(t('kpi.title'))}</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+          <div><div class="num" style="font-size:20px;font-weight:600">12</div><div style="font-size:11px;color:var(--muted)">${esc(t('kpi.downloads'))}</div></div>
+          <div><div class="num" style="font-size:20px;font-weight:600">3</div><div style="font-size:11px;color:var(--muted)">${esc(t('kpi.activeStreams'))}</div></div>
+        </div>
+      </div>
+      <div class="m-card"><div style="padding:10px 16px;border-bottom:1px solid var(--border)" class="label">${esc(t('streams.title'))}</div>
+        ${STREAMS.map(s => `<div class="m-row">
+          <img class="poster" src="${s.poster}" alt="${esc(s.alt)}" width="34" height="50">
+          <span><span class="t">${esc(s.title)}</span><br><span class="s">${esc(s.device)} · ${esc(s.bitrate)}</span></span>
+          <span class="chip ${s.mode === 'transcode' ? 'warn' : 'ok'}">${esc(t(s.mode === 'transcode' ? 'streams.transcode' : 'streams.directPlay'))}</span>
+        </div>`).join('')}
+      </div>
+      <div class="m-card"><div style="padding:10px 16px;border-bottom:1px solid var(--border)" class="label">${esc(t('feed.title'))}</div>
+        ${FEED.slice(0, 4).map(f => `<div class="m-row">
+          <span class="ficon" style="width:34px;height:34px;border-radius:6px;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--border)"><img src="${svc(f.svc).icon}" alt="" width="16" height="16"></span>
+          <span><span class="t">${esc(t('feedItems.' + f.tpl, { title: f.title, n: f.n, lib: f.lib, dev: f.dev }))}</span><br><span class="s">${esc(t('time.agoMin', { n: f.mins }))}</span></span>
+        </div>`).join('')}
+      </div>`;
+  } else if (phoneTab === 'queue') {
+    body.innerHTML = `<div class="m-card"><div style="padding:10px 16px;border-bottom:1px solid var(--border)" class="label">${esc(t('mobile.queueTitle'))} · 12,480</div>
+      ${QUEUE.slice(0, 4).map((r, i) => { const st = i === 2 ? 'paused' : r.status; return `<div class="m-row">
+        <span class="ficon" style="width:34px;height:34px;border-radius:6px;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--border)"><img src="${svc(r.svc).icon}" alt="" width="16" height="16"></span>
+        <span><span class="t">${esc(r.title)}</span><br><span class="s">${esc(svc(r.svc).name)} · ${esc(r.quality)}</span></span>
+        <span class="chip ${st === 'paused' ? 'warn' : st === 'failed' ? 'danger' : 'ok'}" style="font-size:10px;padding:2px 7px">${esc(t('queue.status' + st.charAt(0).toUpperCase() + st.slice(1)))}</span>
+        <button class="icon-action" data-expand="${i}" aria-label="${esc(t('mobile.expand'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>
+      ${(i === 0 || i === 2) ? `<div class="m-expand">
+        <div class="bar-wrap"><div class="bar"><i style="width:${r.progress}%"></i></div><span class="pct">${r.progress}%</span></div>
+        <div class="row"><span class="spacer"></span><span class="num" style="font-size:11px;color:var(--muted)">ETA ${esc(r.eta)}</span></div>
+        <div class="row"><button class="btn" style="padding:5px 10px">${esc(t(i === 0 ? 'queue.actionPause' : 'queue.actionResume'))}</button><button class="btn btn-danger" style="padding:5px 10px">${esc(t('queue.actionRemove'))}</button></div>
+      </div>` : ''}`; }).join('')}
+    </div>`;
+  } else if (phoneTab === 'activity') {
+    body.innerHTML = `<div class="m-card"><div style="padding:10px 16px;border-bottom:1px solid var(--border)" class="label">${esc(t('feed.title'))}</div>
+      ${FEED.map(f => `<div class="m-row">
+        <span class="ficon" style="width:34px;height:34px;border-radius:6px;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--border)"><img src="${svc(f.svc).icon}" alt="" width="16" height="16"></span>
+        <span><span class="t">${esc(t('feedItems.' + f.tpl, { title: f.title, n: f.n, lib: f.lib, dev: f.dev }))}</span><br><span class="s">${esc(svc(f.svc).name)} · ${esc(t('time.agoMin', { n: f.mins }))}</span></span>
+      </div>`).join('')}</div>`;
+  } else if (phoneTab === 'streams') {
+    body.innerHTML = `<div class="m-card"><div style="padding:10px 16px;border-bottom:1px solid var(--border)" class="label">${esc(t('streams.title'))}</div>
+      ${STREAMS.map(s => `<div class="m-row">
+        <img class="poster" src="${s.poster}" alt="${esc(s.alt)}" width="34" height="50">
+        <span><span class="t">${esc(s.title)}</span><br><span class="s">${esc(s.user)} · ${esc(s.device)}</span></span>
+        <span class="chip ${s.mode === 'transcode' ? 'warn' : 'ok'}">${esc(t(s.mode === 'transcode' ? 'streams.transcode' : 'streams.directPlay'))}</span>
+      </div>`).join('')}</div>`;
+  } else {
+    body.innerHTML = `<div class="m-card" style="padding:14px 16px">
+      <div class="label" style="margin-bottom:10px">${esc(t('settings.interface'))}</div>
+      ${[t('settings.theme'), t('settings.language'), t('settings.density')].map(x => `<div class="set-row"><span class="t">${esc(x)}</span></div>`).join('')}
+    </div>`;
+  }
+  document.getElementById('phone-tabs').innerHTML = [
+    ['dashboard', 'mobile.tabDashboard', 'M2 12h4l3-7 4 14 3-7h6'],
+    ['activity', 'mobile.tabActivity', 'M3 5h18M3 12h18M3 19h12'],
+    ['queue', 'mobile.tabQueue', 'M4 6h16M4 12h16M4 18h16'],
+    ['streams', 'mobile.tabStreams', 'M3 5h18v12H3zM8 21h8'],
+    ['settings', 'mobile.tabSettings', 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a7 7 0 0 0-1.7-1L14.5 3h-4l-.3 2.1a7 7 0 0 0-1.7 1L6.1 5 4 8.5 6 10a7 7 0 0 0 0 2l-2 1.5L6 17l2.4-1a7 7 0 0 0 1.7 1l.4 2h4l.3-2.1a7 7 0 0 0 1.7-1l2.4 1 2-3.5-2-1.5c.1-.3.1-.7.1-1Z']
+  ].map(([id, key, d]) => `<button data-phone-tab="${id}" ${phoneTab === id ? 'aria-current="page"' : ''}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>
+      ${esc(t(key))}${id === 'queue' ? `<span class="tab-badge">31</span>` : ''}</button>`).join('');
+}
+
+function renderPhoneQueue() {
+  const rows = QUEUE.slice(0, 4).map((r, i) => {
+    const st = i === 2 ? 'paused' : r.status;
+    const expanded = i === 0 || i === 2;
+    const statusKey = 'queue.status' + st.charAt(0).toUpperCase() + st.slice(1);
+    const chipClass = st === 'paused' ? 'warn' : st === 'failed' ? 'danger' : 'ok';
+    const expand = expanded ? `<div class="m-expand">
+        <div class="bar-wrap"><div class="bar"><i style="width:${r.progress}%"></i></div><span class="pct">${r.progress}%</span></div>
+        <div class="row"><span class="spacer"></span><span class="num" style="font-size:11px;color:var(--muted)">ETA ${esc(r.eta)}</span></div>
+        <div class="row" style="gap:8px"><button class="btn" style="flex:1;min-height:44px;justify-content:center">${esc(t(i === 0 ? 'queue.actionPause' : 'queue.actionResume'))}</button><button class="btn btn-danger" style="flex:1;min-height:44px;justify-content:center">${esc(t('queue.actionRemove'))}</button></div>
+      </div>` : '';
+    return `<div class="m-row">
+        <span class="ficon" style="width:34px;height:34px;border-radius:6px;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--border)"><img src="${svc(r.svc).icon}" alt="" width="16" height="16"></span>
+        <span><span class="t">${esc(r.title)}</span><br><span class="s">${esc(svc(r.svc).name)} · ${esc(r.quality)}</span></span>
+        <span class="chip ${chipClass}" style="font-size:10px;padding:2px 7px">${esc(t(statusKey))}</span>
+        <button class="icon-action" style="width:44px;height:44px" aria-label="${esc(t(expanded ? 'mobile.collapse' : 'mobile.expand'))}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="transform:rotate(${expanded ? 180 : 0}deg)"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>${expand}`;
+  }).join('');
+  document.getElementById('phone-queue-body').innerHTML =
+    `<div class="m-card"><div style="padding:10px 16px;border-bottom:1px solid var(--border)" class="label">${esc(t('mobile.queueTitle'))} · 12,480</div>
+      ${rows}
+    </div>`;
+  document.getElementById('phone-tabs-2').innerHTML = document.getElementById('phone-tabs').innerHTML
+    .replace('aria-current="page"', '')
+    .replace('data-phone-tab="queue"', 'data-phone-tab="queue" aria-current="page"');
+}
+
+function statesRow(row, state) {
+  const sv = svc(row.svc);
+  const barCls = row.status === 'failed' ? 'failed' : row.status === 'paused' ? 'paused' : '';
+  const stateTag = `<span class="state-tag ${state}">${esc(t('queue.state' + state[0].toUpperCase() + state.slice(1)))}</span>`;
+  return `<tr data-id="${row.id}" class="state-${state}">
+    <td><span class="svc"><img src="${sv.icon}" alt="" width="16" height="16"><span class="svc-name">${esc(sv.name)}</span></span></td>
+    <td><div class="title-cell"><span class="t">${esc(row.title)}</span><span class="s">${esc(row.sub)}</span></div></td>
+    <td><span class="quality">${esc(row.quality)}</span></td>
+    <td><div class="bar-wrap"><div class="bar ${barCls}"><i style="width:${row.progress}%"></i></div><span class="pct">${row.progress}%</span></div></td>
+    <td><span class="num">${esc(row.eta)}</span></td>
+    <td>${statusChip(row.status)}</td>
+    <td>${stateTag}</td>
+    <td><div class="row-actions">${rowActions(row, state)}</div></td>
+  </tr>`;
+}
+
+function renderStatesMatrix() {
+  const rows = [QUEUE[0], QUEUE[1], QUEUE[2], QUEUE[3]];
+  const states = ['idle', 'pending', 'success', 'error'];
+  document.getElementById('states-body').innerHTML =
+    rows.map((r, i) => statesRow(r, states[i])).join('');
+
+  document.getElementById('states-legend').innerHTML = states.map((st) => `
+    <div class="legend-item">
+      <span class="state-tag ${st}">${esc(t('queue.state' + st[0].toUpperCase() + st.slice(1)))}</span>
+      <span class="legend-txt">${esc(t('states.legend' + st[0].toUpperCase() + st.slice(1)))}</span>
+    </div>`).join('');
+
+  // Density comparison — identical rows/feed rendered at both densities.
+  ['comfortable', 'compact'].forEach(d => {
+    const q = document.getElementById('density-q-' + d);
+    if (q) q.innerHTML = QUEUE.slice(0, 3).map(r => queueRow(r, null)).join('');
+    const fd = document.getElementById('density-f-' + d);
+    if (fd) fd.innerHTML = FEED.slice(0, 3).map(item => {
+      const sv = svc(item.svc);
+      return `<li class="feed-item sev-${item.sev}">
+        <span class="ficon"><img src="${sv.icon}" alt="" width="15" height="15"></span>
+        <span>
+          <span class="ftitle">${esc(t('feedItems.' + item.tpl, { title: item.title, n: item.n, lib: item.lib, dev: item.dev }))}</span>
+          <span class="fsub">${esc(sv.name)} · ${esc(t('feed.actions.' + item.action))}</span>
+        </span>
+        <span class="ftime">${esc(t('time.agoMin', { n: item.mins }))}</span>
+      </li>`;
+    }).join('');
+  });
+
+  document.getElementById('states-toasts-body').innerHTML = `
+    <div class="toast ok"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span><span class="t">${esc(t('toast.paused', { title: 'Dune: Part Two' }))}</span><span class="s">${esc(t('toast.pausedBody', { title: 'Dune: Part Two' }))}</span></span></div>
+    <div class="toast err"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 8v5"/><circle cx="12" cy="16.5" r=".6" fill="currentColor"/><path d="M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg></span><span><span class="t">${esc(t('toast.actionFailed'))}</span><span class="s">${esc(t('toast.actionFailedBody', { title: 'Sinners' }))}</span></span></div>
+    <div class="toast info"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 8h.01"/><circle cx="12" cy="12" r="9"/></svg></span><span><span class="t">${esc(t('toast.removed', { title: 'The Fantastic Four: First Steps' }))}</span><span class="s">${esc(t('toast.removedBody', { title: 'The Fantastic Four: First Steps' }))}</span></span></div>`;
+}
+
+/* ── spec panel ─────────────────────────────────────────────────────────── */
+function renderSpec() {
+  const status = [
+    ['--ok', 'Ok / complete'], ['--warn', 'Warning / transcode'], ['--danger', 'Error / down'],
+    ['--stale', 'Stale data'], ['--accent', 'Interactive'], ['--fg-2', 'Secondary text']
+  ];
+  document.getElementById('spec-status').innerHTML = status.map(([v, n]) =>
+    `<div class="swatch"><div class="chipc" style="background:var(${v})"></div><div class="nm">${v}<br>${esc(n)}</div></div>`).join('');
+  const viz = [];
+  for (let i = 1; i <= 7; i++) viz.push([`--viz-seq-${i}`, `Sequential ${i}`]);
+  for (let i = 1; i <= 6; i++) viz.push([`--viz-cat-${i}`, `Categorical ${i}`]);
+  document.getElementById('spec-viz').innerHTML = viz.map(([v, n]) =>
+    `<div class="swatch"><div class="chipc" style="background:var(${v})"></div><div class="nm">${v}<br>${esc(n)}</div></div>`).join('');
+  const base = [
+    ['--bg', 'Canvas'], ['--surface', 'Panel'], ['--surface-2', 'Raised panel'],
+    ['--surface-3', 'Inset / hover'], ['--fg', 'Primary text'], ['--fg-2', 'Secondary text'],
+    ['--muted', 'Muted text'], ['--border', 'Divider'], ['--border-strong', 'Emphasis border']
+  ];
+  document.getElementById('spec-base').innerHTML = base.map(([v, n]) =>
+    `<div class="swatch"><div class="chipc" style="background:var(${v});border-bottom:1px solid var(--border)"></div><div class="nm">${v}<br>${esc(n)}</div></div>`).join('');
+
+  const type = [
+    ['--fs-11', 'IBM Plex Sans', '11px', 'Micro label, uppercase tracking'],
+    ['--fs-12', 'IBM Plex Sans', '12px', 'Badge, timestamp'],
+    ['--fs-13', 'IBM Plex Sans', '13px', 'Table cell, meta'],
+    ['--fs-14', 'IBM Plex Sans', '14px', 'Body'],
+    ['--fs-16', 'IBM Plex Sans', '16px', 'Card title'],
+    ['--fs-18', 'IBM Plex Sans', '18px', 'Widget heading'],
+    ['--fs-22', 'IBM Plex Sans', '22px', 'Page heading'],
+    ['--fs-28', 'IBM Plex Mono', '28px', 'KPI value, tabular-nums'],
+    ['--fs-36', 'IBM Plex Mono', '36px', 'Hero metric'],
+    ['--font-mono', 'IBM Plex Mono', '—', 'Numbers, IDs, timestamps']
+  ];
+  document.getElementById('spec-type').innerHTML = type.map(([v, fam, size, use]) =>
+    `<div class="swatch"><div class="chipc typechip" style="font-family:${fam === 'IBM Plex Mono' ? 'var(--font-mono)' : 'var(--font-ui)'};font-size:${size === '—' ? 'var(--fs-16)' : size};color:var(--fg)">${v.startsWith('--fs') ? 'Aa 123' : '0123'}</div>
+      <div class="nm">${v} · ${esc(size)}<br>${esc(use)}</div></div>`).join('');
+
+  const space = [['--sp-1',4],['--sp-2',8],['--sp-3',12],['--sp-4',16],['--sp-5',20],['--sp-6',24],['--sp-8',32],['--sp-10',40],['--sp-12',48],['--sp-16',64]];
+  document.getElementById('spec-space').innerHTML = space.map(([v, px]) =>
+    `<div class="swatch"><div class="chipc spchip" style="padding:0 12px"><span style="display:block;height:10px;width:${px}px;background:var(--accent);border-radius:2px"></span></div>
+      <div class="nm">${v}<br>${px}px</div></div>`).join('');
+
+  const radius = [['--r-xs',4],['--r-sm',6],['--r-md',8],['--r-lg',12],['--r-pill',999]];
+  document.getElementById('spec-radius').innerHTML = radius.map(([v, px]) =>
+    `<div class="swatch"><div class="chipc" style="display:grid;place-items:center"><span style="width:38px;height:38px;background:var(--surface-3);border:1px solid var(--border-strong);border-radius:${px === 999 ? '999px' : px + 'px'}"></span></div>
+      <div class="nm">${v}<br>${px === 999 ? 'pill' : px + 'px'}</div></div>`).join('');
+
+  const shadow = [['--shadow-1','1px / 2px blur','Card'],['--shadow-2','4px / 14px blur','Dropdown, toast'],['--shadow-3','16px / 40px blur','Modal, overlay'],['--scrim','72% black','Modal backdrop']];
+  document.getElementById('spec-shadow').innerHTML = shadow.map(([v, d, use]) =>
+    `<div class="swatch"><div class="chipc" style="display:grid;place-items:center;background:var(--surface-2)"><span style="width:44px;height:30px;border-radius:var(--r-sm);background:var(--surface-3);${v === '--scrim' ? '' : `box-shadow:var(${v})`};${v === '--scrim' ? 'box-shadow:0 0 0 20px var(--scrim)' : ''}"></span></div>
+      <div class="nm">${v}<br>${esc(d)} · ${esc(use)}</div></div>`).join('');
+
+  document.getElementById('spec-density').innerHTML = `
+    <div class="swatch"><div class="chipc" style="background:var(--surface-2);display:grid;align-content:center;gap:6px;padding:0 10px">
+      <span style="height:14px;background:var(--surface-3);border-radius:3px"></span><span style="height:14px;background:var(--surface-3);border-radius:3px"></span><span style="height:14px;background:var(--surface-3);border-radius:3px"></span></div>
+      <div class="nm">comfortable<br>row 44px</div></div>
+    <div class="swatch"><div class="chipc" style="background:var(--surface-2);display:grid;align-content:center;gap:2px;padding:0 10px">
+      <span style="height:8px;background:var(--surface-3);border-radius:3px"></span><span style="height:8px;background:var(--surface-3);border-radius:3px"></span><span style="height:8px;background:var(--surface-3);border-radius:3px"></span><span style="height:8px;background:var(--surface-3);border-radius:3px"></span></div>
+      <div class="nm">compact<br>row 32px</div></div>`;
+  const motion = [
+    ['A1', 'Feed item enters', '220ms', 'cubic-bezier(0.16,1,0.3,1)'],
+    ['A2', 'Optimistic row settles', '400ms', 'ease-out'],
+    ['A3', 'Live dot pulse', '1200ms loop', 'cubic-bezier(0.4,0,0.2,1)'],
+    ['A4', 'Progress bar width', '400ms', 'cubic-bezier(0.16,1,0.3,1)'],
+    ['A5', 'Toast enter', '220ms', 'cubic-bezier(0.16,1,0.3,1)'],
+    ['A6', 'Stale fade-out', '400ms', 'ease-out'],
+    ['A7', 'Hover / focus', '140ms', 'cubic-bezier(0.4,0,0.2,1)'],
+    ['A8', 'Pending spinner', '900ms loop', 'linear']
+  ];
+  document.getElementById('spec-motion').innerHTML = motion.map(([id, n, d, e]) =>
+    `<li style="display:grid;grid-template-columns:36px minmax(140px,1fr) 140px minmax(180px,auto);gap:16px;align-items:baseline;padding:9px 16px;border-bottom:1px solid var(--border-soft)"><span class="mono" style="color:var(--accent)">${id}</span><span>${esc(n)}</span><span class="mono" style="color:var(--muted)">${esc(d)}</span><span class="mono" style="color:var(--faint);text-align:right">${esc(e)}</span></li>`).join('');
+}
+
+/* ── i18n apply ─────────────────────────────────────────────────────────── */
+function applyI18n() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    let args = {};
+    const a = el.getAttribute('data-i18n-args');
+    if (a) { try { args = JSON.parse(a); } catch (_) {} }
+    el.textContent = t(el.getAttribute('data-i18n'), args);
+  });
+  document.querySelectorAll('[data-i18n-attr]').forEach(el => {
+    el.getAttribute('data-i18n-attr').split(';').forEach(pair => {
+      const [attr, key] = pair.split(':').map(s => s.trim());
+      if (attr && key) el.setAttribute(attr, t(key));
+    });
+  });
+  document.querySelectorAll('[data-lang]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+  renderQueue(); renderFeed('feed-list', FEED, 6); renderStreams(); renderContainers();
+  renderErrors('error-list', ERRORS); renderFeed('stale-feed-body', FEED, 5);
+  document.getElementById('stale-queue-body').innerHTML = `<table class="tbl"><tbody>${QUEUE.slice(0, 6).map(r => queueRow(r, null)).join('')}</tbody></table>`;
+  const eCount = ERRORS.filter(e => e.sev === 'error').length;
+  const wCount = ERRORS.filter(e => e.sev === 'warning').length;
+  const iCount = ERRORS.filter(e => e.sev === 'info').length;
+  const chip = document.getElementById('error-count');
+  chip.className = 'chip num' + (eCount ? ' danger' : ' ok');
+  chip.textContent = [eCount ? `${eCount} ${t('errors.severityError').toLowerCase()}` : null,
+                       wCount ? `${wCount} ${t('errors.severityWarning').toLowerCase()}` : null,
+                       iCount ? `${iCount} ${t('errors.severityInfo').toLowerCase()}` : null]
+                      .filter(Boolean).join(' · ');
+  renderWizardSteps(); renderServiceGrid(); renderWizardForms(); renderWizardYaml(); renderWizardSummary();
+  renderMiniDash('wizard-preview'); renderMiniDash('wizard-preview-done');
+  renderConnectorList(); renderLayoutGrid(); renderPhone(); renderPhoneQueue(); renderSpec(); renderStatesMatrix();
+  drawChart(document.querySelector('[data-range][aria-pressed="true"]')?.dataset.range || 'day');
+}
+
+/* ── view switching ─────────────────────────────────────────────────────── */
+function showView(name, sub) {
+  const target = sub ? name + '/' + sub : name;
+  // Sandboxed previews and file:// openers have an opaque origin, where
+  // history.replaceState is not permitted. Degrade to a plain hash write.
+  if (location.hash.slice(1) !== target) {
+    try { history.replaceState(null, '', '#' + target); }
+    catch (_) { try { location.hash = target; } catch (_) {} }
+  }
+  document.querySelectorAll('.view').forEach(v => { v.hidden = v.id !== 'view-' + name; });
+  document.querySelectorAll('.refbar nav button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === name)));
+  if (name === 'history') {
+    requestAnimationFrame(() => { drawChart(currentRange); });
+  }
+  if (name === 'settings' && sub) {
+    document.querySelectorAll('#settings-tabs button').forEach(b => b.setAttribute('aria-current', String(b.dataset.tab === sub)));
+    const panel = document.getElementById('settings-' + sub);
+    if (panel) {
+      document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('is-active'));
+      panel.classList.add('is-active');
+      const top = panel.getBoundingClientRect().top + window.scrollY - 96;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+  }
+  const navMap = { dashboard: 'dashboard', history: 'history', settings: 'settings', onboarding: 'dashboard' };
+  document.querySelectorAll('.tab').forEach(tb => tb.setAttribute('aria-current', tb.dataset.nav === navMap[name] ? 'page' : 'false'));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ── count-up ───────────────────────────────────────────────────────────── */
+function countUp(el) {
+  const target = Number(el.dataset.count);
+  const t0 = performance.now(), dur = 500;
+  const step = now => {
+    const p = Math.min(1, (now - t0) / dur);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(target * eased).toLocaleString(lang === 'da' ? 'da-DK' : 'en-US');
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+/* ── wiring ─────────────────────────────────────────────────────────────── */
+document.addEventListener('click', ev => {
+  const langBtn = ev.target.closest('[data-lang]');
+  if (langBtn) { lang = langBtn.dataset.lang; applyI18n(); return; }
+
+  const densBtn = ev.target.closest('[data-density-set]');
+  if (densBtn) {
+    document.documentElement.dataset.density = densBtn.dataset.densitySet;
+    document.querySelectorAll('[data-density-set]').forEach(b => b.setAttribute('aria-pressed', String(b === densBtn)));
+    document.querySelectorAll('input[name="set-density"]').forEach(r => r.checked = r.value === densBtn.dataset.densitySet);
+    return;
+  }
+
+  const viewBtn = ev.target.closest('.refbar nav button');
+  if (viewBtn) { showView(viewBtn.dataset.view); return; }
+
+  const navBtn = ev.target.closest('[data-nav]');
+  if (navBtn) { showView(navBtn.dataset.nav); return; }
+
+  const filterBtn = ev.target.closest('[data-filter]');
+  if (filterBtn) {
+    queueFilter = filterBtn.dataset.filter;
+    document.querySelectorAll('[data-filter]').forEach(b => b.setAttribute('aria-pressed', String(b === filterBtn)));
+    renderQueue(); return;
+  }
+
+  const sortTh = ev.target.closest('[data-sort]');
+  if (sortTh) {
+    const key = sortTh.dataset.sort;
+    queueSort = queueSort.key === key ? { key, dir: -queueSort.dir } : { key, dir: 1 };
+    sortTh.setAttribute('aria-sort', queueSort.dir === 1 ? 'ascending' : 'descending');
+    renderQueue(); return;
+  }
+
+  const actionBtn = ev.target.closest('[data-act]');
+  if (actionBtn) { optimisticAction(actionBtn.dataset.id, actionBtn.dataset.act); return; }
+
+  const testBtn = ev.target.closest('[data-test]');
+  if (testBtn) {
+    const id = testBtn.dataset.test;
+    const out = document.getElementById('test-' + id);
+    testBtn.classList.add('is-busy');
+    testBtn.disabled = true;
+    testBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9"/></svg>${esc(t('onboarding.testing'))}`;
+    setTimeout(() => {
+      const ok = id !== 'overseerr';
+      out.className = 'test-result ' + (ok ? 'ok' : 'fail');
+      out.innerHTML = ok
+        ? `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>${esc(t('onboarding.testOk'))}`
+        : `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>${esc(t('onboarding.testFail'))} — ${esc(t('onboarding.testFailBody'))}`;
+      testBtn.classList.remove('is-busy');
+      testBtn.disabled = false;
+      testBtn.textContent = t('onboarding.testConnection');
+    }, 1100);
+    return;
+  }
+
+  const svcTile = ev.target.closest('.svc-tile');
+  if (svcTile) {
+    const id = svcTile.dataset.svc;
+    wizSelected.has(id) ? wizSelected.delete(id) : wizSelected.add(id);
+    renderServiceGrid(); renderWizardForms(); renderWizardYaml(); renderWizardSteps();
+    return;
+  }
+
+  const rangeBtn = ev.target.closest('[data-range]');
+  if (rangeBtn) {
+    document.querySelectorAll('[data-range]').forEach(b => b.setAttribute('aria-pressed', String(b === rangeBtn)));
+    drawChart(rangeBtn.dataset.range); return;
+  }
+
+  const setTab = ev.target.closest('#settings-tabs button');
+  if (setTab) {
+    history.replaceState(null, '', '#settings/' + setTab.dataset.tab);
+    document.querySelectorAll('#settings-tabs button').forEach(b => b.setAttribute('aria-current', String(b === setTab)));
+    document.getElementById('settings-connectors').hidden = setTab.dataset.tab !== 'connectors';
+    document.getElementById('settings-interface').hidden = setTab.dataset.tab !== 'interface';
+    document.getElementById('settings-layout').hidden = setTab.dataset.tab !== 'layout';
+    return;
+  }
+
+  const phoneBtn = ev.target.closest('[data-phone-tab]');
+  if (phoneBtn) { phoneTab = phoneBtn.dataset.phoneTab; renderPhone(); renderPhoneQueue(); return; }
+
+  const kpi = ev.target.closest('.kpi');
+  if (kpi) { showView('history'); return; }
+
+  if (ev.target.closest('#theme-toggle')) {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    document.querySelectorAll('input[name="set-theme"]').forEach(r => r.checked = r.value === next);
+    return;
+  }
+
+  if (ev.target.closest('#wizard-next')) { wizStep = Math.min(3, wizStep + 1); renderWizardSteps(); return; }
+  if (ev.target.closest('#wizard-back')) { wizStep = Math.max(1, wizStep - 1); renderWizardSteps(); return; }
+  if (ev.target.closest('#history-back')) { showView('dashboard'); return; }
+});
+
+document.getElementById('queue-search').addEventListener('input', e => { queueQuery = e.target.value; renderQueue(); });
+document.addEventListener('change', e => {
+  if (e.target.name === 'set-theme') {
+    document.documentElement.dataset.theme = e.target.value === 'system' ? (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : e.target.value;
+  }
+  if (e.target.name === 'set-lang') { lang = e.target.value; applyI18n(); }
+  if (e.target.name === 'set-density') {
+    document.documentElement.dataset.density = e.target.value;
+    document.querySelectorAll('[data-density-set]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.densitySet === e.target.value)));
+  }
+});
+
+/* sparkline for disk temperature — computed from a fixed demo series */
+(function spark() {
+  const vals = [38, 37, 36, 37, 39, 41, 44, 46, 48, 51, 47, 45, 43, 44, 42, 40, 39, 41, 43, 45, 44, 43, 44, 44];
+  const min = 34, max = 52, W = 120, H = 34;
+  const x = i => (W * i) / (vals.length - 1);
+  const y = v => H - ((v - min) / (max - min)) * H;
+  const line = vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const area = `${line} L${W},${H} L0,${H} Z`;
+  document.getElementById('disk-spark').innerHTML =
+    `<defs><linearGradient id="sp" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--warn)" stop-opacity=".35"/><stop offset="100%" stop-color="var(--warn)" stop-opacity="0"/></linearGradient></defs>
+     <rect x="0" y="${y(50).toFixed(1)}" width="${W}" height="${(y(min) - y(50)).toFixed(1)}" fill="var(--danger)" opacity=".10"/>
+     <path d="${area}" fill="url(#sp)"/><path d="${line}" fill="none" stroke="var(--warn)" stroke-width="1.5"/>`;
+})();
+
+applyI18n();
+document.querySelectorAll('.kpi-value[data-count]').forEach(countUp);
+{ const h = location.hash.slice(1).split('/'); showView(h[0] || 'dashboard', h[1]); }
+</script>
+</body>
+</html>

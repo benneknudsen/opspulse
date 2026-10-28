@@ -1,0 +1,143 @@
+@import "tailwindcss";
+@import "../design/tokens.css";
+
+@theme inline {
+  /* ── Colour ─────────────────────────────────────────────────────────── */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-inset: var(--surface-inset);
+
+  --color-fg: var(--fg);
+  --color-fg-2: var(--fg-2);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+
+  --color-border: var(--border);
+  --color-border-soft: var(--border-soft);
+  --color-border-strong: var(--border-strong);
+  --color-border-accent: var(--border-accent);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-active: var(--accent-active);
+  --color-accent-on: var(--accent-on);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-line: var(--accent-line);
+
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-stale: var(--stale);
+  --color-stale-soft: var(--stale-soft);
+
+  --color-viz-seq-1: var(--viz-seq-1);
+  --color-viz-seq-2: var(--viz-seq-2);
+  --color-viz-seq-3: var(--viz-seq-3);
+  --color-viz-seq-4: var(--viz-seq-4);
+  --color-viz-seq-5: var(--viz-seq-5);
+  --color-viz-seq-6: var(--viz-seq-6);
+  --color-viz-seq-7: var(--viz-seq-7);
+
+  --color-viz-cat-1: var(--viz-cat-1);
+  --color-viz-cat-2: var(--viz-cat-2);
+  --color-viz-cat-3: var(--viz-cat-3);
+  --color-viz-cat-4: var(--viz-cat-4);
+  --color-viz-cat-5: var(--viz-cat-5);
+  --color-viz-cat-6: var(--viz-cat-6);
+
+  /* ── Type ───────────────────────────────────────────────────────────── */
+  --font-ui: var(--font-ui);
+  --font-mono: var(--font-mono);
+
+  --text-11: var(--fs-11);
+  --text-12: var(--fs-12);
+  --text-13: var(--fs-13);
+  --text-14: var(--fs-14);
+  --text-15: var(--fs-15);
+  --text-16: var(--fs-16);
+  --text-18: var(--fs-18);
+  --text-22: var(--fs-22);
+  --text-28: var(--fs-28);
+  --text-36: var(--fs-36);
+
+  --leading-tight: var(--lh-tight);
+  --leading-snug: var(--lh-snug);
+  --leading-body: var(--lh-body);
+
+  --tracking-display: var(--track-display);
+  --tracking-tight: var(--track-tight);
+  --tracking-label: var(--track-label);
+
+  /* ── Spacing ────────────────────────────────────────────────────────── */
+  --spacing-1: var(--sp-1);
+  --spacing-2: var(--sp-2);
+  --spacing-3: var(--sp-3);
+  --spacing-4: var(--sp-4);
+  --spacing-5: var(--sp-5);
+  --spacing-6: var(--sp-6);
+  --spacing-8: var(--sp-8);
+  --spacing-10: var(--sp-10);
+  --spacing-12: var(--sp-12);
+  --spacing-16: var(--sp-16);
+
+  /* Density-driven spacing: these cascade with data-density. */
+  --spacing-row: var(--row-h);
+  --spacing-cell-y: var(--cell-py);
+  --spacing-cell-x: var(--cell-px);
+  --spacing-feed-y: var(--feed-item-py);
+
+  /* ── Radius ─────────────────────────────────────────────────────────── */
+  --radius-xs: var(--r-xs);
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-pill: var(--r-pill);
+
+  /* ── Elevation ──────────────────────────────────────────────────────── */
+  --shadow-1: var(--shadow-1);
+  --shadow-2: var(--shadow-2);
+  --shadow-3: var(--shadow-3);
+
+  /* ── Motion ─────────────────────────────────────────────────────────── */
+  --transition-duration-1: var(--dur-1);
+  --transition-duration-2: var(--dur-2);
+  --transition-duration-3: var(--dur-3);
+  --transition-duration-4: var(--dur-4);
+  --transition-duration-5: var(--dur-5);
+
+  --ease-out: var(--ease-out);
+  --ease-standard: var(--ease-standard);
+  --ease-inout: var(--ease-inout);
+
+  --animate-feed-in: op-feed-in var(--dur-3) var(--ease-out);
+  --animate-row-settle: op-row-settle var(--dur-4) var(--ease-out);
+  --animate-live-pulse: op-live-pulse var(--dur-5) var(--ease-inout) infinite;
+  /* 900ms is specified by A8 in design/components.md; not tokenized yet. */
+  --animate-spin: op-spin 900ms linear infinite;
+  --animate-toast-in: op-toast-in var(--dur-3) var(--ease-out);
+
+  /* ── Z-index ────────────────────────────────────────────────────────── */
+  --z-index-sticky: var(--z-sticky);
+  --z-index-dropdown: var(--z-dropdown);
+  --z-index-overlay: var(--z-overlay);
+  --z-index-toast: var(--z-toast);
+
+  /* ── Breakpoints ────────────────────────────────────────────────────── */
+  --breakpoint-xs: 400px;
+  --breakpoint-sm: 600px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1200px;
+  --breakpoint-2xl: 1440px;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-ui);
+}
