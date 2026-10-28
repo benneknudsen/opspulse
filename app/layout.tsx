@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { Shell } from "@/components/shell/Shell";
+
 import "@fontsource/ibm-plex-sans/400.css";
 import "@fontsource/ibm-plex-sans/500.css";
 import "@fontsource/ibm-plex-sans/600.css";
@@ -51,14 +53,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="da"
-      data-theme="dark"
-      data-density="comfortable"
       suppressHydrationWarning
       className="h-full antialiased"
     >
       <body className="min-h-full">
         <script dangerouslySetInnerHTML={{ __html: bootstrapScript }} />
-        {children}
+        <Shell>{children}</Shell>
       </body>
     </html>
   );
