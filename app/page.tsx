@@ -1,20 +1,24 @@
+"use client";
+
 import Link from "next/link";
 
+import { useT } from "@/lib/i18n";
+
 export default function Home() {
+  const t = useT();
+
   return (
-    <main className="flex min-h-full flex-col items-start gap-4 bg-bg p-8 text-fg">
-      <h1 className="font-ui text-28 tracking-display">OpsPulse</h1>
-      <p className="max-w-prose text-14 text-muted">
-        Real-time operations dashboard for self-hosted media servers. The
-        application shell arrives with the later issues; the design tokens are
-        already wired.
-      </p>
+    <section className="flex flex-col items-start gap-4">
+      <h1 className="font-ui text-28 tracking-display text-fg">
+        {t("app.name")}
+      </h1>
+      <p className="max-w-prose text-14 text-muted">{t("app.tagline")}</p>
       <Link
-        className="rounded-md border border-border-accent bg-accent-soft px-3 py-2 text-13 text-accent"
+        className="rounded-sm border border-border-strong px-3 py-2 text-13 text-muted hover:bg-surface-2 hover:text-fg"
         href="/dev-tokens"
       >
-        Token smoke test
+        {t("nav.spec")}
       </Link>
-    </main>
+    </section>
   );
 }

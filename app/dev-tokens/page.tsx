@@ -4,7 +4,7 @@
  */
 export default function DevTokensPage() {
   return (
-    <main data-testid="dev-tokens" className="min-h-full bg-bg p-6 text-fg">
+    <section data-testid="dev-tokens" className="min-h-full bg-bg p-6 text-fg">
       <h1 className="font-ui text-22 tracking-tight">Token pipeline smoke test</h1>
       <p className="mt-2 text-13 text-muted">
         Temporary page. Every swatch below is painted from a Tailwind token.
@@ -72,6 +72,6 @@ export default function DevTokensPage() {
           duration-3
         </div>
       </section>
-    </main>
+    </section>
   );
 }

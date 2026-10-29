@@ -73,6 +73,11 @@
   --tracking-tight: var(--track-tight);
   --tracking-label: var(--track-label);
 
+  /* ── Layout ─────────────────────────────────────────────────────────── */
+  --spacing-topbar: var(--topbar-h);
+  --spacing-grid: var(--grid-gap);
+  --container-page: var(--page-max);
+
   /* ── Spacing ────────────────────────────────────────────────────────── */
   --spacing-1: var(--sp-1);
   --spacing-2: var(--sp-2);
