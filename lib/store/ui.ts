@@ -2,22 +2,26 @@
 
 import { create } from "zustand";
 import { persist, type PersistStorage } from "zustand/middleware";
+import {
+  DEFAULT_UI_PREFERENCES,
+  DENSITIES,
+  LANGUAGES,
+  THEMES,
+  type Density,
+  type Language,
+  type Theme,
+  type UiPreferences,
+} from "@/lib/config/ui";
+
+export {
+  DEFAULT_UI_PREFERENCES,
+  DENSITIES,
+  LANGUAGES,
+  THEMES,
+} from "@/lib/config/ui";
+export type { Density, Language, Theme, UiPreferences } from "@/lib/config/ui";
 
 export const UI_STORAGE_KEY = "opspulse.ui";
-
-export const THEMES = ["dark", "light", "system"] as const;
-export const LANGUAGES = ["da", "en"] as const;
-export const DENSITIES = ["comfortable", "compact"] as const;
-
-export type Theme = (typeof THEMES)[number];
-export type Language = (typeof LANGUAGES)[number];
-export type Density = (typeof DENSITIES)[number];
-
-export interface UiPreferences {
-  theme: Theme;
-  language: Language;
-  density: Density;
-}
 
 export interface UiState extends UiPreferences {
   setTheme: (theme: Theme) => void;
@@ -25,19 +29,11 @@ export interface UiState extends UiPreferences {
   setDensity: (density: Density) => void;
 }
 
-export const DEFAULT_UI_PREFERENCES: UiPreferences = {
-  theme: "dark",
-  language: "da",
-  density: "comfortable",
-};
-
 function isOneOf<T extends string>(
   values: readonly T[],
   value: unknown,
 ): value is T {
-  return (
-    typeof value === "string" && (values as readonly string[]).includes(value)
-  );
+  return values.some((candidate) => candidate === value);
 }
 
 function parsePreferences(raw: string | null): UiPreferences | null {
