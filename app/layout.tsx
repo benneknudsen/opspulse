@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { RealtimeProvider } from "@/components/realtime/RealtimeProvider";
 import { Shell } from "@/components/shell/Shell";
 
 import "@fontsource/ibm-plex-sans/400.css";
@@ -58,7 +59,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     >
       <body className="min-h-full">
         <script dangerouslySetInnerHTML={{ __html: bootstrapScript }} />
-        <Shell>{children}</Shell>
+        {/* Not inside Shell: tests render Shell directly and must stay socket-free. */}
+        <RealtimeProvider>
+          <Shell>{children}</Shell>
+        </RealtimeProvider>
       </body>
     </html>
   );
